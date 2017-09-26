@@ -1,0 +1,364 @@
+[3;J[H[2J--------------------------------------------------------------------------------
+		   obspyDMT (obspy Data Management Tool)
+
+	Python Toolbox for Retrieving, Processing and Management of
+			Large Seismological Datasets
+
+:copyright:
+The ObsPy Development Team (devs@obspy.org)
+
+Developed by Kasra Hosseini
+email: kasra.hosseinizad@earth.ox.ac.uk
+
+:license:
+GNU General Public License, Version 3
+(http://www.gnu.org/licenses/gpl-3.0-standalone.html)
+--------------------------------------------------------------------------------
+
+Usage: obspyDMT [options]
+
+Options:
+  -h, --help            show this help message and exit
+  --options             show the description of all option groups.
+  --list_option=LIST_OPTION
+                        show the options inside specified option group.
+                        syntax: --list_option 1, the numbers can be seen from
+                        --options flag.
+
+  01. check installation:
+    --tour              Run a quick tour.
+    --check             Check all basic dependencies and their installed
+                        versions on the local machine and exit.
+    --version           Show the obspyDMT version and exit.
+
+  02. local path specification:
+    --datapath=DATAPATH
+                        Path where obspyDMT will store/process/plot data
+                        (default: './obspydmt-data').
+    --reset             If the datapath is found, delet it before running
+                        obspyDMT.
+
+  03. data retrieval modes:
+    --event_based       Event-based request mode (default).
+    --continuous        Continuous time series request mode.
+    --meta_data         Metadata request mode.
+    --local             Local mode for processing/plotting (no data
+                        retrieval).
+
+  04. general options (all modes):
+    --data_source=DATA_SOURCE
+                        Data source(s) for retrieving
+                        waveform/response/metadata (default: 'IRIS').
+                        Examples: 'IRIS' or 'IRIS,ORFEUS' or 'all'
+    --print_data_sources
+                        Print supported data centers that can be passed as
+                        arguments to --data_source.
+    --print_event_catalogs
+                        Print supported earthquake catalogs that can be passed
+                        as arguments to --event_catalog.
+    --waveform=WAVEFORM
+                        Retrieve waveform(s) (default: True).
+    --force_waveform    Retrieve waveform(s), force override of any pre-
+                        existing waveforms in local datapath directory.
+    --response=RESPONSE
+                        Retrieve response file(s) (default: True).
+    --force_response    Retrieve response file(s), force override of any pre-
+                        existing response files in local datapath directory.
+    --dir_select=DIR_SELECT
+                        Selects a subset of data directories for which to
+                        update/process/plot the contents (default False, i.e.,
+                        all subdirectories will be considered). Example:
+                        'dir1,dir2'
+    --min_epi=MIN_EPI   Retrieve/plot all stations with epicentral distance >=
+                        min epi.
+    --max_epi=MAX_EPI   Retrieve/plot all stations with epicentral distance <=
+                        max epi.
+    --min_azi=MIN_AZI   Retrieve/plot all stations with azimuth >= min azi.
+    --max_azi=MAX_AZI   Retrieve/plot all stations with azimuth <= max azi.
+    --list_stas=LIST_STAS
+                        User-provided station list instead of querying
+                        availability with a data center (default: False).
+                        Example: /path/list-stations
+    --test=TEST         test the program for the desired number of requests,
+                        e.g.: '--test 10' will test the program for 10
+                        requests. [default: False]
+
+  05. time window, waveform format, and sampling rate (all modes):
+    --min_date=MIN_DATE
+                        Start time, syntax: 'YYYY-MM-DD-HH-MM-SS' or 'YYYY-MM-
+                        DD' (default: '1970-01-01').
+    --max_date=MAX_DATE
+                        End time, syntax: 'YYYY-MM-DD-HH-MM-SS' or 'YYYY-MM-
+                        DD' (default: Today).
+    --preset=PRESET     Time interval in seconds to add to the retrieved time
+                        series before its reference time. In event_based mode,
+                        the reference time is the earthquake origin time by
+                        default but can be modified by --cut_time_phase. In
+                        continuous mode, the reference time(s) are specified
+                        by --interval option, and --preset prepends the
+                        specified lead to each interval (default: 0). Example:
+                        300
+    --offset=OFFSET     Time interval in seconds to include to the retrieved
+                        time series after the time(s) reference. In event
+                        based mode, the reference time is the earthquake
+                        origin time by default but can be modified by
+                        --cut_time_phase. In continuous mode, the reference
+                        time(s) are specified by --interval option, and
+                        --offset appends the specified offset to each interval
+                        (default: 1800). Example: 3600
+    --cut_time_phase    In event based mode, use as reference time the first-
+                        arriving phase (i.e., P, Pdiff or PKIKP, determined
+                        automatically). Overrides the use of origin time as
+                        default reference time.
+    --waveform_format=WAVEFORM_FORMAT
+                        Format of retrieved waveforms. Default is miniseed
+                        ('mseed'), alternative option is 'sac'. This fills in
+                        some basic header information as well.
+    --sampling_rate=SAMPLING_RATE
+                        Desired sampling rate (in Hz). If not specified, the
+                        sampling rate of the waveforms will not be changed.
+                        Example: 10
+    --resample_method=RESAMPLE_METHOD
+                        Resampling method: 'decimate' or 'lanczos'. Both
+                        methods use sharp low pass filters before resampling
+                        in order to avoid aliasing. If the desired sampling
+                        rate is 5 times lower than the original one,
+                        resampling will be done in several stages (default:
+                        'lanczos'). Example: 'decimate'
+
+  06. stations (all modes):
+    --net=NET           Network code (default: *). Example: 'TA' or 'TA,G' or
+                        'T*'
+    --sta=STA           Station code (default: *). Example: 'R*' or 'RR01' or
+                        'RR01,RR02'
+    --loc=LOC           Location code (default: *). Example: '00' or '*'
+    --cha=CHA           Channel code (default: *). Example: 'BHZ' or 'BHZ,BHE'
+                        or 'BH*'
+    --identity=IDENTITY
+                        Identity code restriction, syntax: net.sta.loc.cha,
+                        e.g.: IU.*.*.BHZ to search for all BHZ channels in IU
+                        network (default: *.*.*.*).
+    --station_rect=STATION_RECT
+                        Include all stations within the defined rectangle,
+                        syntax: <lonmin>/<lonmax>/<latmin>/<latmax>. Cannot be
+                        combined with circular bounding box (--station_circle)
+                        (default: -180.0/+180.0/-90.0/+90.0). Example:
+                        '20/30/-15/35'
+    --station_circle=STATION_CIRCLE
+                        Include all stations within the defined circle,
+                        syntax: <lon>/<lat>/<rmin>/<rmax>. Cannnot be combined
+                        with rectangular bounding box (--station_rect)
+                        (default: 0/0/0/180). Example: '20/30/10/80'
+
+  07. speed up options (all modes):
+    --req_parallel      Enable parallel waveform/response request. Retrieve
+                        several waveforms/metadata in parallel.
+    --req_np=REQ_NP     Number of thread to be used in --req_parallel
+                        (default: 4). Example: 8
+    --bulk              Send a bulk request to a FDSN data center. Returns
+                        multiple seismogram channels in a single request. Can
+                        be combined with --req_parallel.
+    --parallel_process  Enable parallel local processing of the waveforms,
+                        useful on multicore hardware.
+    --process_np=PROCESS_NP
+                        Number of threads to be used in --parallel_process
+                        (default: 4).
+
+  08. restricted data:
+    --user=USERNAME     Username for restricted data requests,
+                        waveform/response modes (default: None).
+    --pass=PASSWORD     Password for restricted data requests,
+                        waveform/response modes (default: None).
+
+  09. event-based mode:
+    --event_catalog=EVENT_CATALOG
+                        Event catalog, currently supports LOCAL, NEIC_USGS,
+                        GCMT_COMBO, IRIS, NCEDC, USGS, INGV, ISC, NERIES
+                        (default: LOCAL). '--event_catalog LOCAL' searches for
+                        an existing event catalog on the user's local machine,
+                        in the EVENTS-INFO subdirectory of --datapath <PATH>.
+                        This is usually a previously retrieved catalog.
+                        Example: IRIS
+    --event_info        Retrieve event information (meta-data) without
+                        downloading actual waveforms.
+    --read_catalog=READ_CATALOG
+                        Read in an existing local event catalog and proceed.
+                        Currently supported catalog metadata formats: 'CSV',
+                        'QUAKEML', 'NDK', 'ZMAP'. Format of the plain text CSV
+                        (comma-separated values) is explained in the obspyDMT
+                        tutorial. Refer to obspy documentation for details on
+                        QuakeML, NDK and ZMAP formats. Example:
+                        /path/to/file.ml
+    --min_depth=MIN_DEPTH
+                        Minimum event depth (default: -10.0 (above the
+                        surface!)).
+    --max_depth=MAX_DEPTH
+                        Maximum event depth (default: +6000.0).
+    --min_mag=MIN_MAG   Minimum magnitude (default: 3.0).
+    --max_mag=MAX_MAG   Maximum magnitude (default: 10.0).
+    --mag_type=MAG_TYPE
+                        Magnitude type. Common types include 'Ml'
+                        (local/Richter magnitude), 'Ms' (surface wave
+                        magnitude), 'mb' (body wave magnitude), 'Mw' (moment
+                        magnitude), (default: None, i.e., consider all
+                        magnitude types in a given catalogue). Example: 'Mw'
+    --event_rect=EVENT_RECT
+                        Include all events within the defined rectangle,
+                        syntax: <lonmin>/<lonmax>/<latmin>/<latmax>. Cannot be
+                        combined with circular bounding box (--event_circle)
+                        (default: -180.0/+180.0/-90.0/+90.0). Example:
+                        '80/135/-15/35'
+    --event_circle=EVENT_CIRCLE
+                        Search for all the events within the defined circle,
+                        syntax: <lon>/<lat>/<rmin>/<rmax>. Cannot be combined
+                        with rectangular bounding box (--event_rect) (default:
+                        0/0/0/180). Example: '20/30/10/80'
+    --isc_catalog=ISC_CATALOG
+                        Search either the COMPREHENSIVE or the REVIEWED
+                        bulletin of the International Seismological Centre
+                        (ISC). COMPREHENSIVE: all events collected by the ISC,
+                        including most recent events that are awaiting review.
+                        REVIEWED: includes only events that have been
+                        relocated by ISC analysts. (default: COMPREHENSIVE).
+                        Example: 'REVIEWED'
+
+  10. continuous time series mode:
+    --interval=INTERVAL
+                        Specify time interval for subdividing long continuous
+                        time series (default: 86400 sec). Example: '3600'
+
+  11. local processing:
+    --pre_process=PRE_PROCESS
+                        Process retrieved/local data based on processing
+                        instructions in the selected processing unit (default:
+                        'process_unit'). Example: process_unit_sac
+    --force_process     Forces to run the processing unit on the
+                        local/retrieved data, overwriting any previously
+                        processed data in local datapath directory.
+    --instrument_correction
+                        Apply instrument correction in the process unit.
+    --corr_unit=CORR_UNIT
+                        Correct the raw waveforms for displacement in m (DIS),
+                        velocity in m/s (VEL) or accelaration in m/s2 (ACC)
+                        (default: DIS). Example: 'VEL'
+    --pre_filt=PRE_FILT
+                        Apply a bandpass filter to the seismograms before
+                        deconvolution, syntax: 'None' or '(f1,f2,f3,f4)' which
+                        are the four corner frequencies of a cosine taper,
+                        default: '(0.008, 0.012, 3.0, 4.0)'.
+    --water_level=WATER_LEVEL
+                        Water level in dB for instrument response
+                        deconvolution (default: 600.0).
+    --select_data=SELECT_DATA
+                        before processing, select one waveform every X
+                        degree(s). syntax: --select_data 5, i.e. select one
+                        waveform every 5 degrees. [default: False]
+
+  12. synthetic seismograms:
+    --syngine           Retrieve synthetic waveforms using IRIS/syngine
+                        webservice.
+    --syngine_bg_model=SYNGINE_BG_MODEL
+                        Syngine background model (default: 'iasp91_2s').
+    --print_syngine_models
+                        Print supported syngine models that can be passed as
+                        arguments to --syngine_bg_model.
+    --syngine_geocentric_lat=SYNGINE_GEOCENTRIC_LAT
+                        Requesting synthetic seismograms based on geocentric
+                        latitudes of events/stations (default: True).
+    --normal_mode_syn   retrieve synthetic waveforms calculated by normal mode
+                        summation code. (ShakeMovie project)
+    --specfem3D         retrieve synthetic waveforms calculated by SPECFEM3D.
+                        (ShakeMovie project)
+
+  13. plotting:
+    --plot              Activates plotting functionality.
+    --plot_sta          Plot all stations found in the specified directory
+                        (--datapath).
+    --plot_availability
+                        Plot all availabilities (potential seismometers) found
+                        in the specified directory (--datapath).
+    --plot_ev           Plot all events found in the specified directory
+                        (--datapath).
+    --plot_focal        Plot beachballs instead of dots for event locations.
+    --plot_ray          Plot the ray coverage for all station-event pairs
+                        found in the specified directory (--datapath).
+    --create_kml        Create KML file(s) for event/station/ray. KML format
+                        is readable by Google-Earth.
+    --create_event_vtk  Create a VTK file for event(s). VTK format is readable
+                        by Paraview.
+    --plot_seismicity   Create a seismicity map and some basic statistics on
+                        the results.
+    --depth_bins_seismicity=DEPTH_BINS_SEISMICITY
+                        Depth bins for plotting the seismicity histogram
+                        (default: 10 km).
+    --plot_waveform     Plot waveforms arranged by epicentral distance.
+    --plot_dir_name=PLOT_DIR_NAME
+                        Directory name that contains the waveforms for
+                        --plot_waveform option flag, e.g.: --plot_waveform
+                        'processed' (default: raw).
+    --plot_save=PLOT_SAVE
+                        Path where plots will be store (default: '.', i.e.,
+                        the current directory).
+    --plot_format=PLOT_FORMAT
+                        Image format of plots (default: 'png').
+    --plot_lon0=PLOT_LON0
+                        Central meridian (x-axis origin) for projection
+                        (default: 180).
+
+  14. explore instrument responses (stationXML files):
+    --plot_stationxml   Plot the contents of stationXML file(s), i.e. transfer
+                        function of filter stages, specified by --datapath.
+    --plotxml_date=PLOTXML_DATE
+                        Datetime to be used for plotting the transfer
+                        function, syntax: 'YYYY-MM-DD-HH-MM-SS' or 'YYYY-MM-
+                        DD'. If not specified, the starting date of the last
+                        channel in the stationXML will be used. Example:
+                        '2010-01-01'
+    --plotxml_output=PLOTXML_OUTPUT
+                        Type of transfer function to plot: DIS/VEL/ACC
+                        (default: VEL).
+    --plotxml_allstages
+                        Plot all filter stages specified in response file.
+    --plotxml_paz       Plot only Poles And Zeros (PAZ) of the response file,
+                        i.e. the analog stage.
+    --plotxml_plotstage12
+                        Plot only stages 1 and 2 of full response file.
+    --plotxml_start_stage=PLOTXML_START_STAGE
+                        First stage in response file to be considered for
+                        plotting the transfer function (default: 1).
+    --plotxml_end_stage=PLOTXML_END_STAGE
+                        Final stage in response file to be considered for
+                        plotting the transfer function, (default: last stage
+                        given in response file or the 100th stage, whichever
+                        number is smaller).
+    --plotxml_min_freq=PLOTXML_MIN_FREQ
+                        Minimum frequency in Hz to be used in transfer
+                        function plots (default: 0.01).
+    --plotxml_map_compare
+                        Plot all stations for which instrument responses have
+                        been compared (PAZ against full response).
+    --plotxml_percentage=PLOTXML_PERCENTAGE
+                        Percentage of the phase transfer function's frequency
+                        range to be used for checking the difference between
+                        methods. '100' will compare transfer functions across
+                        their entire spectral range, i.e. from min freq (set
+                        by --plotxml_min_freq) to Nyquist frequency; '80'
+                        compares from min freq to 0.8 times Nyquist frequency
+                        (default: 80).
+    --plotxml_phase_threshold=PLOTXML_PHASE_THRESHOLD
+                        maximum allowable length (in percentage) to differ
+                        between two different methods of instrument
+                        correction. This only applies to phase difference.
+                        [default: 10]
+    --plotxml_no_response
+                        do not plot the full response file.
+
+  15. others:
+    --email=EMAIL       Send an email to the specified address after
+                        completing the job (default: False).
+    --arc_avai_timeout=ARC_AVAI_TIMEOUT
+                        Timeout (in sec) for sending a data availability query
+                        via ArcLink (default: 40).
+    --arc_wave_timeout=ARC_WAVE_TIMEOUT
+                        Timeout (in sec) for sending a waveform data or
+                        metadata request via ArcLink (default: 2).

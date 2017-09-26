@@ -1,0 +1,71 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : travel_time_compute.py
+Purpose : Measure and record traveltime delays
+Creation Date : 12-09-2017
+Last Modified : Mon 18 Sep 2017 04:43:24 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+import numpy as np
+from matplotlib import pyplot as plt
+from sys import argv
+from mpl_toolkits.basemap import Basemap
+
+
+def main():
+    datapath = argv[1]
+    e_lines = exceptions(datapath)
+    a_lines,coord = available(datapath)
+    #print 'available: ',int(float(len(a_lines))/3.)
+    #print 'excluded: ',len(e_lines)
+    a_coord = avail_coords(a_lines,e_lines,coord)
+    plot_coords(np.array(coord))
+
+def plot_coords(a_coord):
+    m = Basemap(projection='cyl')
+    xpt, ypt = m(a_coord[:,1],a_coord[:,0])
+    m.scatter(xpt,ypt,s=2,c='k',marker='o',lw=0)
+    m.drawcoastlines(linewidth=0.5)
+    plt.tight_layout()
+    plt.show()
+
+def avail_coords(a_lines,e_lines,coord):
+    a_coord = []
+    for idx,ii in enumerate(a_lines):
+        if ii in e_lines:
+            continue
+        else:
+            a_coord.append(coord[idx])
+    return np.array(a_coord)
+
+def available(datapath):
+    coord = np.genfromtxt(datapath+'/info/availability.txt',delimiter=',')[:,4:6]
+    lines = open(datapath+'/info/availability.txt','r').readlines()
+    a_lines = []
+    for ii in lines:
+        jj = ii.strip().split(',')
+        a_lines.append('{}.{}..{}'.format(jj[0],jj[1],jj[3]))
+    return a_lines,coord
+
+def exceptions(datapath):
+    f = open(datapath+'/info/exception','r')
+    e_stations = f.readlines()[2::4]
+    e_lines = []
+    for ii in e_stations:
+        try:
+            e_lines.append(ii.strip().split()[4])
+        except IndexError:
+            continue
+    return e_lines
+
+main()
+
+
+
+

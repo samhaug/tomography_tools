@@ -1,0 +1,78 @@
+#!/bin/bash
+#
+# Use this to submit an obspyDMT data request to the PBS scheduler
+#
+#
+#
+#
+
+date=$1
+
+if [ $2=='1' ]
+then 
+echo 'First half of year'
+min_date=$date-01-01
+max_date=$date-06-01
+elif [ $2=='2' ]
+then
+echo 'Second half of year'
+min_date=$date-06-01
+max_date=$(($date+1))-01-01
+fi
+
+min_depth=10
+max_depth=700
+#cut_time_phase='P'
+preset=0
+offset=3600
+waveform_format='sac'
+event_catalog='IRIS'
+min_mag='6.0'
+max_mag='7.0'
+cha='BHZ,BHE,BHN,HHE,HHN,HHZ'
+min_epi=10
+max_epi=180
+
+datapath=$date"_"$2
+echo $datapath
+#--cut_time_phase $cut_time_phase
+MY_CMD="obspyDMT 
+--datapath $datapath
+--data_source all
+--min_date $min_date 
+--max_date $max_date 
+--min_depth $min_depth 
+--max_depth $max_depth
+--preset $preset
+--offset $offset
+--min_mag $min_mag
+--max_mag $max_mag
+--cha \"$cha\"
+--min_epi=$min_epi
+--max_epi=$max_epi
+ --waveform_format $waveform_format
+--event_catalog $event_catalog
+--req_parallel --req_np 8
+--parallel_process --process_np 8
+--event_based 
+--instrument_correction
+--syngine 
+--syngine_bg_model iasp91_2s"
+
+echo "# Sample PBS for parallel jobs'" > "$datapath"_submit.pbs
+echo "#PBS -A lsa_flux"                >>"$datapath"_submit.pbs
+echo "#PBS -q flux"                    >>"$datapath"_submit.pbs
+echo "#PBS -l qos=flux"                >>"$datapath"_submit.pbs
+echo "#PBS -N $datapath"               >>"$datapath"_submit.pbs
+echo "#PBS -l nodes=1:ppn=8,pmem=4gb,walltime=200:00:00">>"$datapath"_submit.pbs
+echo "#PBS -d ."                       >>"$datapath"_submit.pbs
+echo "#PBS -m n"                       >>"$datapath"_submit.pbs
+echo "#PBS -V"                         >>"$datapath"_submit.pbs
+echo "#PBS -o $datapath.out"           >>"$datapath"_submit.pbs
+echo "#PBS -e $datapath.err"           >>"$datapath"_submit.pbs
+echo "ulimit -s unlimited "            >>"$datapath"_submit.pbs
+echo $MY_CMD >> "$datapath"_submit.pbs
+qsub "$datapath"_submit.pbs
+
+
+

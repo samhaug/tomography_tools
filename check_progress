@@ -1,0 +1,8 @@
+#!/bin/bash
+# Execute in an event directory to show number of synths, data, and resp files
+synnum=$(ls syng* | wc -l)
+rawnum=$(ls raw | wc -l)
+respnum=$(ls resp | wc -l)
+echo "synths: $synnum"
+echo "raw: $rawnum"
+echo "resp: $respnum"

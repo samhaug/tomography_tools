@@ -1,0 +1,6 @@
+#!/usr/bin/bash
+
+for d in $1
+do
+rm -rf $d/raw
+done
