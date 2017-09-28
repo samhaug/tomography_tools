@@ -8,16 +8,22 @@
 
 date=$1
 
-if [ $2=='1' ]
-then 
-echo 'First half of year'
-min_date=$date-01-01
-max_date=$date-06-01
-elif [ $2=='2' ]
-then
-echo 'Second half of year'
-min_date=$date-06-01
-max_date=$(($date+1))-01-01
+if [ $2 == 1 ]; then
+    echo 'First quarter'
+    min_date=$date-01-01
+    max_date=$date-03-01
+elif [ $2 == 2 ]; then
+    echo 'Second quarter'
+    min_date=$date-03-02
+    max_date=$date-06-01
+elif [ $2 == 3 ]; then
+    echo 'Third quarter'
+    min_date=$date-06-02
+    max_date=$date-09-01
+elif [ $2 == 4 ]; then
+    echo 'Fourth quarter'
+    min_date=$date-09-02
+    max_date=$(($date+1))-01-01
 fi
 
 min_depth=10
@@ -38,6 +44,7 @@ echo $datapath
 #--cut_time_phase $cut_time_phase
 MY_CMD="obspyDMT 
 --datapath $datapath
+--data_source 'BGR,ETH,GEONET,GFZ,INGV,IPGP,IRIS,ISC,KOERI,LMU,NCEDC,NIEP,NOA,ODC,ORFEUS,RESIF,SCEDC,USP'
 --min_date $min_date 
 --max_date $max_date 
 --min_depth $min_depth 

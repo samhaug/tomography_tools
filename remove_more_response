@@ -1,0 +1,30 @@
+#!/home/samhaug/anaconda2/bin/python
+
+from os import listdir
+from obspy import read,read_inventory
+
+
+#Execute within directory containing SAC files and associated SACPZ files.
+#This removes the instrument response from the seismograms and outputs
+#SAC files with a .filtered extension.
+#Samuel Haugland 1/11/16
+
+resp = sorted(listdir('resp'))
+r = sorted(listdir('raw'))
+p = sorted(listdir('processed'))
+# Find all response files that have not been processed.
+o = list(set(r)-set(p))
+print o
+
+
+pre_filt = [0.005, 0.006, 30.0, 35.0]
+
+for idx,ii in enumerate(o):
+    print float(idx)/len(o)*100
+    inv = read_inventory('resp/'+'STXML.'+ii)
+    st = read('raw/'+ii)
+    st.remove_response(inventory=inv,
+                       pre_filt=pre_filt,output='DISP')
+    #st.write('processed/'+ii,format='SAC')
+
+

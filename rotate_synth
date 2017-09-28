@@ -3,8 +3,8 @@
 '''
 ==============================================================================
 
-File Name : pre_process.py
-Purpose : Automated data cleaner for length and station intersection
+File Name : rotate_synth
+Purpose : rotate to SH component on synthetics
 Creation Date : 14-08-2017
 Last Modified : Mon 14 Aug 2017 01:57:02 PM EDT
 Created By : Samuel M. Haugland
@@ -19,33 +19,29 @@ import obspy
 from sys import argv
 
 def main():
-    os.mkdir('sh_processed')
-    stz,stn,ste = read_stream('processed/')
-    print len(stz),len(stn),len(ste)
-    ste = interpolate_filter(ste)
-    stn = interpolate_filter(stn)
-    print len(stz),len(stn),len(ste)
-    stn,ste = station_list_filter(stn,ste)
-    print len(stz),len(stn),len(ste)
-    stz.sort(['station'])
+    os.mkdir('sh_syngine_iasp91_2s')
+    proc = os.listdir('processed')
+    syn = os.listdir('syngine_iasp91_2s')
+
+    rm_list = list(set(syn)-set(proc))
+    if len(rm_list) != 0:
+        for ii in rm_list:
+            os.remove('syngine_iasp91_2s/'+ii)
+
+    stn,ste = read_stream('syngine_iasp91_2s/')
     ste.sort(['station'])
     stn.sort(['station'])
     stn = set_az_gcarc(stn)
     ste = set_az_gcarc(ste)
     r,t = obspy_rotate_ne_rt(stn,ste)
-    #r.write('pre_processed_clean/R.sac',format='SAC')
     for tr in t:
         name = tr.stats.network+'.'+tr.stats.station+'.'+tr.stats.location+'.'+tr.stats.channel
-        tr.write('sh_processed/'+name,format='SAC')
-    #t.write('pre_processed_clean/T.sac',format='SAC')
-    #stz.write('pre_processed_clean/Z.sac',format='SAC')
+        tr.write('sh_syngine_iasp91_2s/'+name,format='SAC')
 
 def obspy_rotate_ne_rt(stn,ste):
     str = stn.copy()
     stt = stn.copy()
     for idx,tr in enumerate(stn):
-        if stn[idx].stats.station != ste[idx].stats.station:
-            continue
         ba = ste[idx].stats.sac['baz']
         e = ste[idx].data
         n = stn[idx].data
@@ -60,13 +56,16 @@ def obspy_rotate_ne_rt(stn,ste):
 def set_az_gcarc(st,**kwargs):
     f = kwargs.get('f',0.0033528106647474805)
     for tr in st:
-	a = obspy.geodetics.gps2dist_azimuth(tr.stats.sac['evla'],
-                                              tr.stats.sac['evlo'],
-                                              tr.stats.sac['stla'],
-                                              tr.stats.sac['stlo'],f=f)
-	tr.stats.sac['baz'] = a[-1]
-	tr.stats.sac['az'] = a[-2]
-	tr.stats.sac['gcarc'] = a[0]/111195.
+        a = obspy.geodetics.gps2dist_azimuth(tr.stats.sac['evla'],
+                                                  tr.stats.sac['evlo'],
+                                                  tr.stats.sac['stla'],
+                                                  tr.stats.sac['stlo'],f=f)
+        try:
+            tr.stats.sac['baz'] = a[-1]
+            tr.stats.sac['az'] = a[-2]
+            tr.stats.sac['gcarc'] = a[0]/111195.
+        except AttributeError:
+            st.remove(tr)
     return st
 
 def station_list_filter(stn,ste):
@@ -101,13 +100,11 @@ def interpolate_filter(st):
     return st
 
 def read_stream(dirname):
-    stz = obspy.read(dirname+'*HZ*')
     ste = obspy.read(dirname+'*HE*')
     stn = obspy.read(dirname+'*HN*')
-    stz.interpolate(10)
     stn.interpolate(10)
     ste.interpolate(10)
-    return stz,stn,ste
+    return stn,ste
 
 main()
 

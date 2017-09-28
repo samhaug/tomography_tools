@@ -1,8 +1,13 @@
 #!/bin/bash
 # Execute in an event directory to show number of synths, data, and resp files
+dir=$(pwd)
 synnum=$(ls syng* | wc -l)
 rawnum=$(ls raw | wc -l)
 respnum=$(ls resp | wc -l)
+procnum=$(ls processed | wc -l)
+echo "$dir"
 echo "synths: $synnum"
 echo "raw: $rawnum"
 echo "resp: $respnum"
+echo "proc: $procnum"
+echo " "

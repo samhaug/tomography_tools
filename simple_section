@@ -3,8 +3,8 @@
 '''
 ==============================================================================
 
-File Name : visual_process.py
-Purpose : visually inspect and remove bad traces
+File Name : simple secton
+Purpose : quickly make a record section
 Creation Date : 14-08-2017
 Last Modified : Mon 14 Aug 2017 01:57:02 PM EDT
 Created By : Samuel M. Haugland
@@ -22,8 +22,8 @@ from obspy.taup import TauPyModel
 #model=TauPyModel(model='iasp91')
 
 def main():
-    st = read_stream(os.getcwd())
-    simple_section(st,picker=True)
+    st = read_stream(argv[1])
+    simple_section(st)
 
 def simple_section(st,**kwargs):
     '''
@@ -115,7 +115,10 @@ def simple_section(st,**kwargs):
         plt.savefig(save)
 
 def read_stream(dirname):
-    stt = obspy.read('*')
+    stt = obspy.read(dirname)
+    stt.interpolate(2)
+    for tr in stt:
+        tr.stats.sac['o'] = 0
     return stt
 
 main()

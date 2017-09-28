@@ -1,0 +1,33 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : synth_metadata
+Purpose : copy sac metadata from processed data to synthetics
+Creation Date : 14-08-2017
+Last Modified : Mon 14 Aug 2017 01:57:02 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+import numpy as np
+from subprocess import call
+from os import listdir
+import obspy
+from sys import argv
+
+def main():
+    stat = listdir('processed/')
+    for ii in stat:
+        try:
+            std = obspy.read('processed/'+ii)
+            sts = obspy.read('syngine_iasp91_2s/'+ii)
+            name = sts[0].stats.network+'.'+sts[0].stats.station+'.'+sts[0].stats.location+'.'+sts[0].stats.channel
+            sts[0].stats.sac = std[0].stats.sac
+            sts.write('syngine_iasp91_2s/'+name,format='SAC')
+        except IOError:
+            continue
+main()
+
