@@ -23,8 +23,8 @@ def main():
                                              tr.stats.sac['evlo'],
                                              tr.stats.sac['stla'],
                                              tr.stats.sac['stlo'],f=f)
-        tr.stats.sac['baz'] = a[-1]
-        tr.stats.sac['az'] = a[-2]
+        tr.stats.sac['baz'] = a[2]
+        tr.stats.sac['az'] = a[1]
         tr.stats.sac['gcarc'] = a[0]/111195.
         tr.write('processed/'+name,format='SAC')
 main()

@@ -1,0 +1,38 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : metadata_process
+Purpose : Add metadata to sac dictionary, need gcarc, az, and baz
+Creation Date : 14-08-2017
+Last Modified : Mon 14 Aug 2017 01:57:02 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+import obspy
+
+def main():
+    f = 0.0033528106647474805
+    st = obspy.read('processed/I*BHZ')
+    tr = st[0]
+    a = obspy.geodetics.gps2dist_azimuth(tr.stats.sac['evla'],
+                                         tr.stats.sac['evlo'],
+                                         tr.stats.sac['stla'],
+                                         tr.stats.sac['stlo'],f=f)
+    print a[2]
+    print a[1]
+    print a[0]/111195.
+
+    a = obspy.geodetics.gps2dist_azimuth(tr.stats.sac['stla'],
+                                         tr.stats.sac['stlo'],
+                                         tr.stats.sac['evla'],
+                                         tr.stats.sac['evlo'],f=f)
+    print a[2]
+    print a[1]
+    print a[0]/111195.
+
+main()
+

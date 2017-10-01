@@ -20,18 +20,21 @@ from sys import argv
 
 def main():
     os.mkdir('sh_processed')
-    stz,stn,ste = read_stream('processed/')
-    print len(stz),len(stn),len(ste)
+    stn,ste = read_stream('processed/')
     ste = interpolate_filter(ste)
     stn = interpolate_filter(stn)
-    print len(stz),len(stn),len(ste)
     stn,ste = station_list_filter(stn,ste)
-    print len(stz),len(stn),len(ste)
-    stz.sort(['station'])
-    ste.sort(['station'])
-    stn.sort(['station'])
-    stn = set_az_gcarc(stn)
-    ste = set_az_gcarc(ste)
+    for idx,ii in enumerate(ste):
+        name = ste[idx].stats.network+'.'+ste[idx].stats.station+'.'+ste[idx].stats.location
+        ste[idx].stats.name = name
+        name = stn[idx].stats.network+'.'+stn[idx].stats.station+'.'+stn[idx].stats.location
+        stn[idx].stats.name = name
+    ste.sort(['name'])
+    stn.sort(['name'])
+    for idx,ii in enumerate(ste):
+        if ste[idx].stats.name != stn[idx].stats.name:
+            print ste[idx].stats.name,stn[idx].stats.name
+
     r,t = obspy_rotate_ne_rt(stn,ste)
     #r.write('pre_processed_clean/R.sac',format='SAC')
     for tr in t:
@@ -101,13 +104,13 @@ def interpolate_filter(st):
     return st
 
 def read_stream(dirname):
-    stz = obspy.read(dirname+'*HZ*')
+    #stz = obspy.read(dirname+'*HZ*')
     ste = obspy.read(dirname+'*HE*')
     stn = obspy.read(dirname+'*HN*')
-    stz.interpolate(10)
+    #stz.interpolate(10)
     stn.interpolate(10)
     ste.interpolate(10)
-    return stz,stn,ste
+    return stn,ste
 
 main()
 

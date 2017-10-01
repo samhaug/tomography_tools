@@ -32,7 +32,7 @@ max_depth=700
 preset=0
 offset=3600
 waveform_format='sac'
-event_catalog='IRIS'
+event_catalog='NEIC_USGS'
 min_mag='6.0'
 max_mag='7.0'
 cha='BHE,BHN,BHZ,HHE,HHN,HHZ'
@@ -63,7 +63,7 @@ MY_CMD="obspyDMT
 --event_based 
 --instrument_correction
 --syngine 
---syngine_bg_model iasp91_2s"
+--syngine_bg_model prem_i_2s"
 
 echo "# Sample PBS for parallel jobs'" > "$datapath"_submit.pbs
 echo "#PBS -A seismoproject_fluxod"                >>"$datapath"_submit.pbs

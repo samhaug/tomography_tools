@@ -24,9 +24,8 @@ def main():
         try:
             std = obspy.read('processed/'+ii)
             sts = obspy.read('syngine_iasp91_2s/'+ii)
-            name = sts[0].stats.network+'.'+sts[0].stats.station+'.'+sts[0].stats.location+'.'+sts[0].stats.channel
-            sts[0].stats.sac = std[0].stats.sac
-            sts.write('syngine_iasp91_2s/'+name,format='SAC')
+            sts[0].stats.sac = std[0].stats.sac.copy()
+            sts.write('syngine_iasp91_2s/'+ii,format='SAC')
         except IOError:
             continue
 main()

@@ -22,8 +22,13 @@ from obspy.taup import TauPyModel
 #model=TauPyModel(model='iasp91')
 
 def main():
-    st = read_stream(argv[1])
-    simple_section(st)
+    st = obspy.read(argv[1])
+    st.interpolate(3)
+    #st.normalize()
+    for tr in st:
+        tr.stats.sac['o'] = 0
+    #simple_section(st[::4],a_list=['tts'])
+    simple_section(st[::4],a_list=['ttp'])
 
 def simple_section(st,**kwargs):
     '''
@@ -109,17 +114,8 @@ def simple_section(st,**kwargs):
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
 
-    if save == False:
-        plt.show()
-    else:
-        plt.savefig(save)
+    plt.show()
 
-def read_stream(dirname):
-    stt = obspy.read(dirname)
-    stt.interpolate(2)
-    for tr in stt:
-        tr.stats.sac['o'] = 0
-    return stt
 
 main()
 

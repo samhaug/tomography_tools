@@ -22,17 +22,20 @@ def main():
     os.mkdir('sh_syngine_iasp91_2s')
     proc = os.listdir('processed')
     syn = os.listdir('syngine_iasp91_2s')
-
     rm_list = list(set(syn)-set(proc))
     if len(rm_list) != 0:
         for ii in rm_list:
             os.remove('syngine_iasp91_2s/'+ii)
 
     stn,ste = read_stream('syngine_iasp91_2s/')
-    ste.sort(['station'])
-    stn.sort(['station'])
-    stn = set_az_gcarc(stn)
-    ste = set_az_gcarc(ste)
+    for idx,ii in enumerate(ste):
+        name = ste[idx].stats.network+'.'+ste[idx].stats.station+'.'+ste[idx].stats.location
+        ste[idx].stats.name = name
+        name = stn[idx].stats.network+'.'+stn[idx].stats.station+'.'+stn[idx].stats.location
+        stn[idx].stats.name = name
+    ste.sort(['name'])
+    stn.sort(['name'])
+    print len(ste),len(stn)
     r,t = obspy_rotate_ne_rt(stn,ste)
     for tr in t:
         name = tr.stats.network+'.'+tr.stats.station+'.'+tr.stats.location+'.'+tr.stats.channel

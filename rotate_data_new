@@ -1,0 +1,85 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : rotate_synth
+Purpose : rotate to SH component on synthetics
+Creation Date : 14-08-2017
+Last Modified : Mon 14 Aug 2017 01:57:02 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+import numpy as np
+from subprocess import call
+import os
+import obspy
+from sys import argv
+from glob import glob
+
+def main():
+    proc = os.listdir('processed')
+    syn = os.listdir('syngine_iasp91_2s')
+    rm_list = list(set(syn)-set(proc))
+
+    e = glob('processed/*HE')
+    n = glob('processed/*HN')
+    i = min(len(e),len(n))
+    for ii in range(0,i):
+        name = e[ii]
+        if name[0:-1]+'N' in n:
+            idx = n.index(name[0:-1]+'N')
+            ste = obspy.read(e[ii])
+            ste.interpolate(10)
+            stn = obspy.read(n[idx])
+            stn.interpolate(10)
+            ste = interpolate_filter(ste)
+            stn = interpolate_filter(ste)
+            r,t = obspy_rotate_ne_rt(stn,ste)
+            t.write(name[0:-1]+'T',format='SAC')
+
+def obspy_rotate_ne_rt(stn,ste):
+    str = stn.copy()
+    stt = stn.copy()
+    for idx,tr in enumerate(stn):
+        ba = ste[idx].stats.sac['baz']
+        e = ste[idx].data
+        n = stn[idx].data
+        r = e*np.sin((ba+180)*2*np.pi/360)+n*np.cos((ba+180)*2*np.pi/360)
+        t = e*np.cos((ba+180)*2*np.pi/360)-n*np.sin((ba+180)*2*np.pi/360)
+	str[idx].data = r
+	str[idx].stats.channel = 'R'
+	stt[idx].data = t
+	stt[idx].stats.channel = 'T'
+    return str,stt
+
+def set_az_gcarc(st,**kwargs):
+    f = kwargs.get('f',0.0033528106647474805)
+    for tr in st:
+        a = obspy.geodetics.gps2dist_azimuth(tr.stats.sac['evla'],
+                                             tr.stats.sac['evlo'],
+                                             tr.stats.sac['stla'],
+                                             tr.stats.sac['stlo'],f=f)
+        try:
+            tr.stats.sac['baz'] = a[-1]
+            tr.stats.sac['az'] = a[-2]
+            tr.stats.sac['gcarc'] = a[0]/111195.
+        except AttributeError:
+            st.remove(tr)
+    return st
+
+def interpolate_filter(st):
+    for tr in st:
+        t = int(round(tr.stats.endtime-tr.stats.starttime))
+        #if t != 3600:
+        #    st.remove(tr)
+        if len(tr.data) < 36000:
+            tr.data = np.pad(tr.data,(0,36000-len(tr.data)),'constant')
+        if len(tr.data) > 36000:
+            tr.data = tr.data[0:36000]
+    return st
+
+main()
+
