@@ -28,7 +28,7 @@ def main():
     for tr in st:
         tr.stats.sac['o'] = 0
     #simple_section(st[::4],a_list=['tts'])
-    simple_section(st[::4],a_list=['ttp'])
+    simple_section(st[::3])
 
 def simple_section(st,**kwargs):
     '''

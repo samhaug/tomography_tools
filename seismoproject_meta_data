@@ -32,7 +32,7 @@ max_depth=700
 preset=0
 offset=3600
 waveform_format='sac'
-event_catalog='NEIC_USGS'
+event_catalog='IRIS'
 min_mag='6.0'
 max_mag='7.0'
 cha='BHE,BHN,BHZ,HHE,HHN,HHZ'
@@ -42,28 +42,19 @@ max_epi=180
 datapath=$date"_"$2
 echo $datapath
 #--cut_time_phase $cut_time_phase
-MY_CMD="~/anaconda2/bin/obspyDMT 
+MY_CMD="obspyDMT 
 --datapath $datapath
---data_source 'BGR,ETH,GEONET,GFZ,INGV,IPGP,IRIS,ISC,KOERI,LMU,NCEDC,NIEP,NOA,ODC,ORFEUS,RESIF,SCEDC,USP'
 --min_date $min_date 
 --max_date $max_date 
 --min_depth $min_depth 
 --max_depth $max_depth
---preset $preset
---offset $offset
 --min_mag $min_mag
 --max_mag $max_mag
 --cha \"$cha\"
 --min_epi=$min_epi
 --max_epi=$max_epi
---waveform_format $waveform_format
 --event_catalog $event_catalog
---req_parallel --req_np 8
---parallel_process --process_np 8
---event_based 
---instrument_correction
---syngine 
---syngine_bg_model prem_i_2s"
+--event_info"
 
 echo "# Sample PBS for parallel jobs'" > "$datapath"_submit.pbs
 echo "#PBS -A seismoproject_fluxod"                >>"$datapath"_submit.pbs

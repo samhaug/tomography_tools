@@ -21,33 +21,39 @@ from glob import glob
 from matplotlib import pyplot as plt
 
 def main():
-    el = glob('syngine_iasp91_2s/*HE')
-    nl = glob('syngine_iasp91_2s/*HN')
+    #el = glob('syngine_iasp91_2s/*HE')
+    #nl = glob('syngine_iasp91_2s/*HN')
+    el = glob('processed/*HE')
+    nl = glob('processed/*HN')
     i = min(len(el),len(nl))
     for ii in range(0,i):
         name = el[ii]
         if name[0:-1]+'N' in nl:
             idx = nl.index(name[0:-1]+'N')
-            ste = obspy.read(el[ii])
-            stn = obspy.read(nl[idx])
-            ba = ste[0].stats.sac['az']
-            print ste[0].stats.sac['az'],stn[0].stats.sac['az']
+            e_name =el[ii].split('/')[-1]
+            n_name = nl[idx].split('/')[-1]
+            ste = obspy.read('syngine_iasp91_2s/'+e_name)
+            stn = obspy.read('syngine_iasp91_2s/'+n_name)
+            #print el[ii],nl[idx]
+            ba = ste[0].stats.sac['baz']
+            #print ste[0].stats.sac['baz'],stn[0].stats.sac['baz']
             e = ste[0].data
             n = stn[0].data
             t = ste[0].copy()
             t.stats.channel = 'T'
-            tdat = e*np.cos(np.radians(ba))-n*np.sin(np.radians(ba))
+            tdat = e*np.cos(np.radians(ba+180))-n*np.sin(np.radians(ba+180))
             t.data = tdat
-            plt.plot(tdat)
-            plt.plot(e)
-            plt.plot(n)
-            plt.show()
-            t.write(name[0:-1]+'T',format='SAC')
+            #plt.plot(tdat)
+            #plt.plot(e)
+            #plt.plot(n)
+            #plt.show()
+            print e_name[0:-1]+'T'
+            t.write(e_name[0:-1]+'T',format='SAC')
 
 def rotate_one():
     el = glob('syngine_iasp91_2s/*HE')
     nl = glob('syngine_iasp91_2s/*HN')
-    name = el[0]
+    name = el[10]
     idx = nl.index(name[0:-1]+'N')
     ste = obspy.read(el[0])
     stn = obspy.read(nl[idx])
@@ -56,13 +62,12 @@ def rotate_one():
     n = stn[0].data
     print np.cos(np.radians(ba+180))
     print np.sin(np.radians(ba+180))
-    plt.plot(e*np.cos(np.radians(ba+180)))
-    plt.plot(n*np.sin(np.radians(ba+180)))
-    plt.show()
+    #plt.plot(e*np.cos(np.radians(ba+180)))
+    #plt.plot(n*np.sin(np.radians(ba+180)))
+    #plt.show()
     tdat = e*np.cos(np.radians(ba+180))-n*np.sin(np.radians(ba+180))
     rdat = e*np.sin(np.radians(ba+180))+n*np.cos(np.radians(ba+180))
     plt.plot(tdat)
-    plt.plot(rdat)
     plt.plot(n,lw=2,color='k')
     plt.plot(e,lw=2,color='k')
     plt.show()
@@ -108,6 +113,5 @@ def interpolate_filter(st):
             tr.data = tr.data[0:36000]
     return st
 
-#main()
-rotate_one()
+main()
 
