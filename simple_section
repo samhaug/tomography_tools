@@ -17,18 +17,35 @@ from matplotlib import pyplot as plt
 from subprocess import call
 import os
 import obspy
-from sys import argv
 from obspy.taup import TauPyModel
+import argparse
+
 #model=TauPyModel(model='iasp91')
 
 def main():
-    st = obspy.read(argv[1])
+    parser = argparse.ArgumentParser(
+                       description='Measure and record traveltime delays')
+    parser.add_argument('-st','--stream',metavar='N',type=str,
+                        help='Path to streams')
+    parser.add_argument('-p','--phase',metavar='N',type=str,
+                        help='Name of phase',default=False)
+    parser.add_argument('--fmin',default=1./100,type=float,
+                        help='Minimum frequency')
+    parser.add_argument('--fmax',default=1./1,type=float,
+                        help='Maximum frequency')
+    parser.add_argument('--stride',default=5,type=int,
+                        help='Stride of data')
+    args = parser.parse_args()
+
+    st = obspy.read(args.stream)
     st.interpolate(3)
-    #st.normalize()
+    st.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
     for tr in st:
         tr.stats.sac['o'] = 0
-    #simple_section(st[::4],a_list=['tts'])
-    simple_section(st[::3])
+    if args.phase == False:
+        simple_section(st[::args.stride])
+    #else:
+    #    simple_section(st[::args.stride],a_list=[args.phase])
 
 def simple_section(st,**kwargs):
     '''
@@ -115,7 +132,6 @@ def simple_section(st,**kwargs):
     ax.set_ylim(ylim)
 
     plt.show()
-
 
 main()
 

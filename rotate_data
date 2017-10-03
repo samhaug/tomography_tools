@@ -3,8 +3,8 @@
 '''
 ==============================================================================
 
-File Name : rotate_synth
-Purpose : rotate to SH component on synthetics
+File Name : rotate_data
+Purpose : rotate to SH component on data
 Creation Date : 14-08-2017
 Last Modified : Mon 14 Aug 2017 01:57:02 PM EDT
 Created By : Samuel M. Haugland
@@ -30,8 +30,12 @@ def main():
             idx = nl.index(name[0:-1]+'N')
             e_name =el[ii].split('/')[-1]
             n_name = nl[idx].split('/')[-1]
-            ste = obspy.read('syngine_iasp91_2s/'+e_name)
-            stn = obspy.read('syngine_iasp91_2s/'+n_name)
+            ste = obspy.read('processed/'+e_name)
+            ste = interpolate_filter(ste)
+            stn = obspy.read('processed/'+n_name)
+            stn = interpolate_filter(stn)
+            if len(ste) == 0 or len(stn) == 0:
+                continue
             ba = ste[0].stats.sac['baz']
             e = ste[0].data
             n = stn[0].data
@@ -40,7 +44,7 @@ def main():
             tdat = e*np.cos(np.radians(ba+180))-n*np.sin(np.radians(ba+180))
             t.data = tdat
             print e_name[0:-1]+'T'
-            t.write('syngine_iasp91_2s/'e_name[0:-1]+'T',format='SAC')
+            t.write('processed/'+e_name[0:-1]+'T',format='SAC')
 
 def rotate_one():
     el = glob('syngine_iasp91_2s/*HE')
