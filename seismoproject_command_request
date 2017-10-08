@@ -35,7 +35,8 @@ waveform_format='sac'
 event_catalog='NEIC_USGS'
 min_mag='6.0'
 max_mag='7.0'
-cha='BHE,BHN,BHZ,HHE,HHN,HHZ'
+#cha='BHE,BHN,BHZ,HHE,HHN,HHZ'
+cha='BHE,BHN,BHZ'
 min_epi=10
 max_epi=180
 

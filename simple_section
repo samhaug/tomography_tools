@@ -14,8 +14,6 @@ Created By : Samuel M. Haugland
 
 import numpy as np
 from matplotlib import pyplot as plt
-from subprocess import call
-import os
 import obspy
 from obspy.taup import TauPyModel
 import argparse
@@ -39,13 +37,14 @@ def main():
 
     st = obspy.read(args.stream)
     st.interpolate(3)
+    print len(st)
     st.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
     for tr in st:
         tr.stats.sac['o'] = 0
     if args.phase == False:
         simple_section(st[::args.stride])
-    #else:
-    #    simple_section(st[::args.stride],a_list=[args.phase])
+    else:
+        simple_section(st[::args.stride],a_list=[args.phase])
 
 def simple_section(st,**kwargs):
     '''

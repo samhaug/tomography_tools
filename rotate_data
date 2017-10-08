@@ -101,8 +101,8 @@ def set_az_gcarc(st,**kwargs):
 def interpolate_filter(st):
     for tr in st:
         t = int(round(tr.stats.endtime-tr.stats.starttime))
-        if t != 3600:
-            st.remove(tr)
+        #if t != 3600:
+        #    st.remove(tr)
         if len(tr.data) < 36000:
             tr.data = np.pad(tr.data,(0,36000-len(tr.data)),'constant')
         if len(tr.data) > 36000:

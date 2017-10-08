@@ -49,6 +49,7 @@ def main():
     write_branch(fname,branch_list)
     write_f_resp(fname,args.fmin,args.fmax)
     std,sts = read_streams(args.data,args.synth)
+    print len(std),len(sts)
     welcome_message(args,std)
     std,sts = phase_range(std,sts,args.phase)
     std.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
@@ -142,7 +143,11 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot):
                      str(data_tr.stats.sac['gcarc'])))
         clicks = ClickSelect()
         plt.show()
-    return tobs,corcoeft,m1,m2,s_amp,d_amp,del_t,clicks.key
+        key = clicks.key
+    else:
+        key = 'control'
+
+    return tobs,corcoeft,m1,m2,s_amp,d_amp,del_t,key
 
 def read_streams(data_pickle,synth_pickle):
     sts = obspy.read(synth_pickle)

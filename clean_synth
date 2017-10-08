@@ -1,0 +1,24 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : clean_raw.py
+Purpose : remove synthetics that don't have processed data
+Creation Date : 03-10-2017
+Last Modified : Tue 03 Oct 2017 01:18:19 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+from os import listdir,remove
+
+proc = listdir('processed/')
+syn = listdir('syngine_iasp91_2s/')
+rem = set(syn)-set(proc)
+for ii in rem:
+    try:
+        remove('syngine_iasp91_2s/'+ii)
+    except OSError:
+        continue

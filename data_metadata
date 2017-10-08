@@ -13,12 +13,31 @@ Created By : Samuel M. Haugland
 '''
 
 import obspy
+from glob import glob
+import os
 
 def main():
+    a = open('info/station_event')
+    b = a.readlines(1)[0].split(',')[9]
+    year = int(b[0:4])
+    month = int(b[4:6])
+    day = int(b[6:8])
+    hour = int(b[9:11])
+    minute = int(b[11:13])
+    second = int(b[13:15])
+    ev_time = obspy.core.UTCDateTime(year,month,day,hour,minute,second)
+    st_Z = meta_data('processed/*HZ',ev_time)
+    print len(st_Z)
+    st_Z.write('st_Z.h5',format='H5')
+
+def meta_data(stream,ev_time):
     f = 0.0033528106647474805
-    st = obspy.read('processed/*')
+    st = obspy.read(stream)
+    st.interpolate(10)
     for tr in st:
-        name = tr.stats.network+'.'+tr.stats.station+'.'+tr.stats.location+'.'+tr.stats.channel
+        if (tr.stats.endtime-tr.stats.starttime) < 3400:
+            st.remove(tr)
+            continue
         a = obspy.geodetics.gps2dist_azimuth(tr.stats.sac['evla'],
                                              tr.stats.sac['evlo'],
                                              tr.stats.sac['stla'],
@@ -26,6 +45,18 @@ def main():
         tr.stats.sac['baz'] = a[2]
         tr.stats.sac['az'] = a[1]
         tr.stats.sac['gcarc'] = a[0]/111195.
-        tr.write('processed/'+name,format='SAC')
+        tr.stats.sac['o'] = ev_time-tr.stats.starttime
+        tr.stats.evla = tr.stats.sac['evla']
+        tr.stats.evlo = tr.stats.sac['evlo']
+        tr.stats.stla = tr.stats.sac['stla']
+        tr.stats.stlo = tr.stats.sac['stlo']
+        tr.stats.gcarc = tr.stats.sac['gcarc']
+        tr.stats.evdp = tr.stats.sac['evdp']
+        tr.stats.o = tr.stats.sac['o']
+        tr.stats.az = tr.stats.sac['az']
+        tr.stats.baz = tr.stats.sac['baz']
+        tr.stats.stel = tr.stats.sac['stel']
+    return st
+
 main()
 

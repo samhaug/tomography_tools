@@ -40,7 +40,7 @@ def main():
             tdat = e*np.cos(np.radians(ba+180))-n*np.sin(np.radians(ba+180))
             t.data = tdat
             print e_name[0:-1]+'T'
-            t.write('syngine_iasp91_2s/'e_name[0:-1]+'T',format='SAC')
+            t.write('syngine_iasp91_2s/'+e_name[0:-1]+'T',format='SAC')
 
 def rotate_one():
     el = glob('syngine_iasp91_2s/*HE')

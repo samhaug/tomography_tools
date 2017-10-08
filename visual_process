@@ -25,6 +25,7 @@ def main():
     st = read_stream(os.getcwd())
     simple_section(st,picker=True)
 
+
 def simple_section(st,**kwargs):
     '''
     Simpler section plotter for obspy stream object

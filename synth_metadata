@@ -14,12 +14,19 @@ Created By : Samuel M. Haugland
 
 import numpy as np
 from subprocess import call
-from os import listdir
+from os import listdir,mkdir
 import obspy
 from sys import argv
 
 def main():
+    mkdir('unused_synth')
     stat = listdir('processed/')
+    syn = listdir('syngine_iasp91_2s')
+    move = set(syn)-set(stat)
+    for ii in move:
+        call('mv syngine_iasp91_2s/'+ii+' unused_synth/',shell=True)
+
+
     for ii in stat:
         try:
             std = obspy.read('processed/'+ii)
