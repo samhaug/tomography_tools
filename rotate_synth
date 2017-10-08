@@ -21,89 +21,36 @@ from glob import glob
 from matplotlib import pyplot as plt
 
 def main():
-    el = glob('processed/*HE')
-    nl = glob('processed/*HN')
-    i = min(len(el),len(nl))
+    el = []
+    nl = []
+    ste = obspy.read('sts_E.h5')
+    stn = obspy.read('sts_N.h5')
+    i = min(len(ste),len(stn))
+    stt = obspy.core.Stream()
+    str = obspy.core.Stream()
     for ii in range(0,i):
-        name = el[ii]
-        if name[0:-1]+'N' in nl:
-            idx = nl.index(name[0:-1]+'N')
-            e_name =el[ii].split('/')[-1]
-            n_name = nl[idx].split('/')[-1]
-            ste = obspy.read('syngine_iasp91_2s/'+e_name)
-            stn = obspy.read('syngine_iasp91_2s/'+n_name)
-            ba = ste[0].stats.sac['baz']
-            e = ste[0].data
-            n = stn[0].data
-            t = ste[0].copy()
-            t.stats.channel = 'T'
-            tdat = e*np.cos(np.radians(ba+180))-n*np.sin(np.radians(ba+180))
-            t.data = tdat
-            print e_name[0:-1]+'T'
-            t.write('syngine_iasp91_2s/'+e_name[0:-1]+'T',format='SAC')
-
-def rotate_one():
-    el = glob('syngine_iasp91_2s/*HE')
-    nl = glob('syngine_iasp91_2s/*HN')
-    name = el[10]
-    idx = nl.index(name[0:-1]+'N')
-    ste = obspy.read(el[0])
-    stn = obspy.read(nl[idx])
-    ba = ste[0].stats.sac['baz']
-    e = ste[0].data
-    n = stn[0].data
-    print np.cos(np.radians(ba+180))
-    print np.sin(np.radians(ba+180))
-    #plt.plot(e*np.cos(np.radians(ba+180)))
-    #plt.plot(n*np.sin(np.radians(ba+180)))
-    #plt.show()
-    tdat = e*np.cos(np.radians(ba+180))-n*np.sin(np.radians(ba+180))
-    rdat = e*np.sin(np.radians(ba+180))+n*np.cos(np.radians(ba+180))
-    plt.plot(tdat)
-    plt.plot(n,lw=2,color='k')
-    plt.plot(e,lw=2,color='k')
-    plt.show()
-    #t.write(name[0:-1]+'T',format='SAC')
-
-def obspy_rotate_ne_rt(stn,ste):
-    stt = stn.copy()
-    for idx,tr in enumerate(stn):
-        ba = ste[idx].stats.sac['baz']
-        e = ste[idx].data
-        n = stn[idx].data
-        #r = e*np.sin((ba+180)*2*np.pi/360)+n*np.cos((ba+180)*2*np.pi/360)
-        t = e*np.cos((ba+180)*2*np.pi/360)-n*np.sin((ba+180)*2*np.pi/360)
-        #str[idx].data = r
-        #str[idx].stats.channel = 'R'
-        stt[idx].data = t
-        stt[idx].stats.channel = 'T'
-    return stt
-
-def set_az_gcarc(st,**kwargs):
-    f = kwargs.get('f',0.0033528106647474805)
-    for tr in st:
-        a = obspy.geodetics.gps2dist_azimuth(tr.stats.sac['evla'],
-                                             tr.stats.sac['evlo'],
-                                             tr.stats.sac['stla'],
-                                             tr.stats.sac['stlo'],f=f)
-        try:
-            tr.stats.sac['baz'] = a[-1]
-            tr.stats.sac['az'] = a[-2]
-            tr.stats.sac['gcarc'] = a[0]/111195.
-        except AttributeError:
-            st.remove(tr)
-    return st
-
-def interpolate_filter(st):
-    for tr in st:
-        t = int(round(tr.stats.endtime-tr.stats.starttime))
-        if t != 3600:
-            st.remove(tr)
-        if len(tr.data) < 36000:
-            tr.data = np.pad(tr.data,(0,36000-len(tr.data)),'constant')
-        if len(tr.data) > 36000:
-            tr.data = tr.data[0:36000]
-    return st
+        name = ste[ii].stats.station+ste[ii].stats.network
+        for tr in stn:
+            if tr.stats.station+tr.stats.network == name:
+                trt = tr.copy()
+                trr = tr.copy()
+                trt.stats.channel = 'BHT'
+                trr.stats.channel = 'BHR'
+                trt.stats.o = 0
+                trr.stats.o = 0
+                e = ste[ii].data
+                n = tr.data
+                ba = ste[ii].stats.baz
+                tdat = e*np.cos(np.radians(ba+180))-n*np.sin(np.radians(ba+180))
+                rdat = e*np.sin(np.radians(ba+180))+n*np.cos(np.radians(ba+180))
+                trt.data = tdat
+                trr.data = rdat
+                stt.append(trt)
+                str.append(trr)
+            else:
+                continue
+    stt.write('sts_T.h5',format='H5')
+    str.write('sts_R.h5',format='H5')
 
 main()
 

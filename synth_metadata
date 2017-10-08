@@ -4,7 +4,7 @@
 ==============================================================================
 
 File Name : synth_metadata
-Purpose : copy sac metadata from processed data to synthetics
+Purpose : save synthetic metadata
 Creation Date : 14-08-2017
 Last Modified : Mon 14 Aug 2017 01:57:02 PM EDT
 Created By : Samuel M. Haugland
@@ -12,28 +12,69 @@ Created By : Samuel M. Haugland
 ==============================================================================
 '''
 
-import numpy as np
-from subprocess import call
-from os import listdir,mkdir
 import obspy
-from sys import argv
+from glob import glob
+import os
 
 def main():
-    mkdir('unused_synth')
-    stat = listdir('processed/')
-    syn = listdir('syngine_iasp91_2s')
-    move = set(syn)-set(stat)
-    for ii in move:
-        call('mv syngine_iasp91_2s/'+ii+' unused_synth/',shell=True)
+    std_Z = obspy.read('st_Z.h5')
+    sts_Z = obspy.core.Stream()
+    for tr in std_Z:
+        st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
+                                             tr.stats.station,
+                                             tr.stats.location,
+                                             tr.stats.channel))
+        st[0].stats.baz = tr.stats.baz
+        st[0].stats.az = tr.stats.az
+        st[0].stats.gcarc = tr.stats.gcarc
+        st[0].stats.o = 0
+        st[0].stats.evla = tr.stats.evla
+        st[0].stats.evlo = tr.stats.evlo
+        st[0].stats.stla = tr.stats.stla
+        st[0].stats.stlo = tr.stats.stlo
+        st[0].stats.evdp = tr.stats.evdp
+        st[0].stats.stel = tr.stats.stel
+        sts_Z.append(st[0])
+    sts_Z.write('sts_Z.h5',format='H5')
 
+    std_E = obspy.read('st_E.h5')
+    sts_E = obspy.core.Stream()
+    for tr in std_E:
+        st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
+                                             tr.stats.station,
+                                             tr.stats.location,
+                                             tr.stats.channel))
+        st[0].stats.baz = tr.stats.baz
+        st[0].stats.az = tr.stats.az
+        st[0].stats.gcarc = tr.stats.gcarc
+        st[0].stats.o = 0
+        st[0].stats.evla = tr.stats.evla
+        st[0].stats.evlo = tr.stats.evlo
+        st[0].stats.stla = tr.stats.stla
+        st[0].stats.stlo = tr.stats.stlo
+        st[0].stats.evdp = tr.stats.evdp
+        st[0].stats.stel = tr.stats.stel
+        sts_E.append(st[0])
+    sts_E.write('sts_E.h5',format='H5')
 
-    for ii in stat:
-        try:
-            std = obspy.read('processed/'+ii)
-            sts = obspy.read('syngine_iasp91_2s/'+ii)
-            sts[0].stats.sac = std[0].stats.sac.copy()
-            sts.write('syngine_iasp91_2s/'+ii,format='SAC')
-        except IOError:
-            continue
+    std_N = obspy.read('st_N.h5')
+    sts_N = obspy.core.Stream()
+    for tr in std_N:
+        st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
+                                             tr.stats.station,
+                                             tr.stats.location,
+                                             tr.stats.channel))
+        st[0].stats.baz = tr.stats.baz
+        st[0].stats.az = tr.stats.az
+        st[0].stats.gcarc = tr.stats.gcarc
+        st[0].stats.o = 0
+        st[0].stats.evla = tr.stats.evla
+        st[0].stats.evlo = tr.stats.evlo
+        st[0].stats.stla = tr.stats.stla
+        st[0].stats.stlo = tr.stats.stlo
+        st[0].stats.evdp = tr.stats.evdp
+        st[0].stats.stel = tr.stats.stel
+        sts_N.append(st[0])
+    sts_N.write('sts_N.h5',format='H5')
 main()
 

@@ -27,8 +27,11 @@ def main():
     second = int(b[13:15])
     ev_time = obspy.core.UTCDateTime(year,month,day,hour,minute,second)
     st_Z = meta_data('processed/*HZ',ev_time)
-    print len(st_Z)
     st_Z.write('st_Z.h5',format='H5')
+    st_E = meta_data('processed/*HE',ev_time)
+    st_E.write('st_E.h5',format='H5')
+    st_N = meta_data('processed/*HN',ev_time)
+    st_N.write('st_N.h5',format='H5')
 
 def meta_data(stream,ev_time):
     f = 0.0033528106647474805

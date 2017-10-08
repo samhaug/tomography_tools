@@ -37,10 +37,7 @@ def main():
 
     st = obspy.read(args.stream)
     st.interpolate(3)
-    print len(st)
     st.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
-    for tr in st:
-        tr.stats.sac['o'] = 0
     if args.phase == False:
         simple_section(st[::args.stride])
     else:
@@ -75,9 +72,11 @@ def simple_section(st,**kwargs):
 
     def plot(tr,o,ax,color,**kwargs):
         alpha = kwargs.get('alpha',0.5)
-        e = tr.stats.npts/tr.stats.sampling_rate
-        t = np.linspace(o,o+e,num=tr.stats.npts)[::4]
-        ax.plot(t,(tr.data[::4]/np.max(tr.data))+tr.stats.sac[mode],alpha=alpha,
+        o = -1*tr.stats.o
+        e = tr.stats.endtime
+        s = tr.stats.starttime
+        t = np.linspace(o,(e-s)-o,num=tr.stats.npts)
+        ax.plot(t,(tr.data/np.max(tr.data))+tr.stats.gcarc,alpha=alpha,
                 color=color,label=tr.stats.network+'.'+tr.stats.station,
                 picker=10)
 
@@ -100,16 +99,16 @@ def simple_section(st,**kwargs):
             return
         else:
             for tr in st:
-                evdp = tr.stats.sac['evdp']
-                gcarc = tr.stats.sac['gcarc']
+                evdp = tr.stats.evdp
+                gcarc = tr.stats.gcarc
                 P = model.get_travel_times(distance_in_degree=gcarc,
                     source_depth_in_km=evdp,
                     phase_list = a_list)
                 P_time = P[0].time
                 if rainbow == True:
-                    plot(tr,-1*(P_time+tr.stats.sac['o']),ax,randcolor())
+                    plot(tr,-1*(P_time+tr.stats.o),ax,randcolor())
                 else:
-                    plot(tr,-1*(P_time+tr.stats.sac['o']),ax,color)
+                    plot(tr,-1*(P_time+tr.stats.o),ax,color)
 
     if picker == True:
         remove_list = []
