@@ -33,6 +33,8 @@ def main():
         for tr in stn:
             if tr.stats.o != ste[ii].stats.o:
                 continue
+            elif tr.stats.starttime != ste[ii].stats.starttime:
+                continue
             elif tr.stats.station+tr.stats.network == name:
                 trt = tr.copy()
                 trr = tr.copy()
@@ -41,6 +43,11 @@ def main():
                 e = ste[ii].data
                 n = tr.data
                 ba = ste[ii].stats.baz
+                if np.abs(len(e)-len(n)) == 1:
+                    print('1 adjust')
+                    lim = min(len(e),len(n))
+                    e = e[::lim]
+                    n = n[::lim]
                 try:
                     tdat = e*np.cos(np.radians(ba+180))-\
                            n*np.sin(np.radians(ba+180))
