@@ -1,0 +1,6 @@
+#!/bin/bash
+
+rm -rf raw
+rm -rf processed
+rm -rf syngine*
+rm -rf resp

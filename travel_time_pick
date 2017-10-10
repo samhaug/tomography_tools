@@ -80,7 +80,7 @@ def welcome_message(args,st):
     print 'Synthetic file: ',args.synth
     print 'Number of traces: ',len(st)
     print 'Measuring delay of phase ',args.phase
-    print 'Event depth: {}km'.format(str(st[0].stats.sac['evdp']))
+    print 'Event depth: {}km'.format(str(st[0].stats.evdp))
     print 'Phase window is {} seconds long'.format(2*args.window)
     print 'Butterworth filter from {} Hz to {} Hz'.format(args.fmin,args.fmax)
     print 'Using every {} traces'.format(args.stride)
@@ -92,12 +92,14 @@ def welcome_message(args,st):
 
 def find_ttime(data_tr,synth_tr,phase,window_tuple,plot):
     samp = data_tr.stats.sampling_rate
-    d_o = data_tr.stats.sac['o']
+    d_o = data_tr.stats.o
     d_st = data_tr.stats.starttime
-    s_o = synth_tr.stats.sac['o']
+    d_et = data_tr.stats.endtime
+    s_o = synth_tr.stats.o
     s_st = synth_tr.stats.starttime
-    time = model.get_travel_times(source_depth_in_km=data_tr.stats.sac['evdp'],
-                                  distance_in_degree=data_tr.stats.sac['gcarc'],
+    s_et = synth_tr.stats.endtime
+    time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
+                                  distance_in_degree=data_tr.stats.gcarc,
                                   phase_list=phase)[0].time
     d = data_tr.slice(d_st+time+d_o+window_tuple[0],
                       d_st+time+d_o+window_tuple[1]).data
@@ -126,11 +128,15 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot):
         fig,ax = plt.subplots(2,1)
         plt.figtext(0.1,0.95,'press ctrl to save')
         t = linspace(window_tuple[0],window_tuple[1],num=len(d))
-        td_full = linspace(0,data_tr.stats.endtime-data_tr.stats.starttime,num=data_tr.stats.npts)
-        ts_full = linspace(0,data_tr.stats.endtime-data_tr.stats.starttime,num=synth_tr.stats.npts)
+        td_full = linspace(-1*d_o,
+                           d_et-d_st-d_o,
+                           num=data_tr.stats.npts)
+        ts_full = linspace(-1*s_o,
+                           s_et-s_st-s_o,
+                           num=synth_tr.stats.npts)
         ax[1].plot(td_full,data_tr.data/data_tr.data.max(),color='k')
         ax[1].plot(ts_full,synth_tr.data/synth_tr.data.max()+1,color='r')
-        ax[1].set_xlim(time+synth_tr.stats.sac['o']-200,time+synth_tr.stats.sac['o']+200)
+        ax[1].set_xlim(time+synth_tr.stats.o-200,time+synth_tr.stats.o+200)
         ax[1].set_ylim(-1.5,2.5)
         ax[0].plot(t,d,color='k')
         ax[0].plot(t,s,color='r')
@@ -140,7 +146,7 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot):
         ax[0].set_xlabel('Time (s)')
         ax[0].set_title('M1:{} \nM2:{} \ndel_t:{} \ndel_amp:{}\n gcarc:{}'.format(
                      str(m1),str(m2),str(del_t),str(s_amp-d_amp),
-                     str(data_tr.stats.sac['gcarc'])))
+                     str(data_tr.stats.gcarc)))
         clicks = ClickSelect()
         plt.show()
         key = clicks.key
@@ -168,11 +174,11 @@ def write_traveltime(fname,tr,tsig,tobs,corcoeft,nbt,xcl,tincore):
     stationcode=tr.stats.station
     netw=tr.stats.network
     comp=tr.stats.channel
-    slat=round(tr.stats.sac['evla'],2)
-    slon=round(tr.stats.sac['evlo'],2)
-    sdep=round(tr.stats.sac['evdp'],2)
-    rlat=round(tr.stats.sac['stla'],2)
-    rlon=round(tr.stats.sac['stlo'],2)
+    slat=round(tr.stats.evla,2)
+    slon=round(tr.stats.evlo,2)
+    sdep=round(tr.stats.evdp,2)
+    rlat=round(tr.stats.stla,2)
+    rlon=round(tr.stats.stlo,2)
     relev=0.0
     nobst=1
     nobsa=0
@@ -262,50 +268,50 @@ def phase_info(phase_name):
 def phase_range(std,sts,phase_name):
     if phase_name == 'Sdiff' or phase_name == 'sSdiff':
         for tr in std:
-            if tr.stats.sac['gcarc'] > 160.:
+            if tr.stats.gcarc > 160.:
                 std.remove(tr)
-            if tr.stats.sac['gcarc'] < 105.:
+            if tr.stats.gcarc < 105.:
                 std.remove(tr)
         for tr in sts:
-            if tr.stats.sac['gcarc'] > 160.:
+            if tr.stats.gcarc > 160.:
                 sts.remove(tr)
-            if tr.stats.sac['gcarc'] < 105.:
+            if tr.stats.gcarc < 105.:
                 sts.remove(tr)
     if phase_name == 'S' or phase_name == 'sS':
         for tr in std:
-            if tr.stats.sac['gcarc'] > 95.:
+            if tr.stats.gcarc > 95.:
                 std.remove(tr)
-            if tr.stats.sac['gcarc'] < 5.:
+            if tr.stats.gcarc < 5.:
                 std.remove(tr)
         for tr in sts:
-            if tr.stats.sac['gcarc'] > 95.:
+            if tr.stats.gcarc > 95.:
                 sts.remove(tr)
-            if tr.stats.sac['gcarc'] < 5.:
+            if tr.stats.gcarc < 5.:
                 sts.remove(tr)
     if phase_name == 'ScS' or phase_name == 'sScS':
         for tr in std:
-            if tr.stats.sac['gcarc'] > 60.:
+            if tr.stats.gcarc > 60.:
                 std.remove(tr)
         for tr in sts:
-            if tr.stats.sac['gcarc'] > 60.:
+            if tr.stats.gcarc > 60.:
                 sts.remove(tr)
     if phase_name == 'ScSScS' or phase_name == 'sScSScS':
         for tr in std:
-            if tr.stats.sac['gcarc'] > 80.:
+            if tr.stats.gcarc > 80.:
                 std.remove(tr)
         for tr in sts:
-            if tr.stats.sac['gcarc'] > 80.:
+            if tr.stats.gcarc > 80.:
                 sts.remove(tr)
     if phase_name == 'SS' or phase_name == 'sSS':
         for tr in std:
-            if tr.stats.sac['gcarc'] > 175.:
+            if tr.stats.gcarc > 175.:
                 std.remove(tr)
-            if tr.stats.sac['gcarc'] < 40.:
+            if tr.stats.gcarc < 40.:
                 std.remove(tr)
         for tr in sts:
-            if tr.stats.sac['gcarc'] > 175.:
+            if tr.stats.gcarc > 175.:
                 sts.remove(tr)
-            if tr.stats.sac['gcarc'] < 40.:
+            if tr.stats.gcarc < 40.:
                 sts.remove(tr)
 
     return std,sts
@@ -327,11 +333,11 @@ def write_amplitude(fname,tr,tsig,tobs,corcoeft,m1,m2,s_amp,d_amp,del_t):
     stationcode=tr.stats.station
     netw=tr.stats.network
     comp=tr.stats.channel
-    slat=round(tr.stats.sac['evla'],2)
-    slon=round(tr.stats.sac['evlo'],2)
-    sdep=round(tr.stats.sac['evdp'],2)
-    rlat=round(tr.stats.sac['stla'],2)
-    rlon=round(tr.stats.sac['stlo'],2)
+    slat=round(tr.stats.evla,2)
+    slon=round(tr.stats.evlo,2)
+    sdep=round(tr.stats.evdp,2)
+    rlat=round(tr.stats.stla,2)
+    rlon=round(tr.stats.stlo,2)
     relev=0
     #number of polar crossings
     line_2 = '1 0 00\n'
