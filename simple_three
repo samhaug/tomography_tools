@@ -3,8 +3,8 @@
 '''
 ==============================================================================
 
-File Name : simple secton
-Purpose : quickly make a record section
+File Name : simple_three
+Purpose : quickly make a three component record section
 Creation Date : 14-08-2017
 Last Modified : Mon 14 Aug 2017 01:57:02 PM EDT
 Created By : Samuel M. Haugland
@@ -24,24 +24,88 @@ def main():
     parser = argparse.ArgumentParser(
                        description='Measure and record traveltime delays')
     parser.add_argument('-st','--stream',metavar='N',type=str,
-                        help='Path to streams')
+                        help='synth',default='synth')
     parser.add_argument('-p','--phase',metavar='N',type=str,
                         help='Name of phase',default=False)
     parser.add_argument('--fmin',default=1./100,type=float,
                         help='Minimum frequency')
     parser.add_argument('--fmax',default=1./1,type=float,
                         help='Maximum frequency')
-    parser.add_argument('--stride',default=5,type=int,
+    parser.add_argument('--stride',default=10,type=int,
                         help='Stride of data')
     args = parser.parse_args()
 
-    st = obspy.read(args.stream)
-    st.interpolate(3)
-    st.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
-    if args.phase == False:
-        simple_section(st[::args.stride])
-    else:
-        simple_section(st[::args.stride],a_list=[args.phase])
+    if args.stream == 'synth':
+        print('read Z')
+        stz = obspy.read('sts_Z.h5')
+        print('read R')
+        stR = obspy.read('sts_R.h5')
+        print('read T')
+        stt = obspy.read('sts_T.h5')
+
+    elif args.stream == 'data':
+        stz = obspy.read('st_Z.h5')
+        stR = obspy.read('st_R.h5')
+        stt = obspy.read('st_T.h5')
+        stz.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
+        stR.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
+        stt.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
+
+    stz.interpolate(1)
+    stR.interpolate(1)
+    stt.interpolate(1)
+    fig,ax = plt.subplots(figsize=(9,12))
+    plt.figtext(0.5,0.5,'h: {}km'.format(stz[0].stats.evdp))
+    plt.tight_layout()
+
+    simple_section(stz[::args.stride],color='k',ax=ax)
+    simple_section(stR[::4],color='r',ax=ax)
+    simple_section(stt[::4],color='b',ax=ax)
+    plot_taup(ax,stz[0].stats.evdp)
+    plt.show()
+
+def plot_taup(ax,h):
+    model = TauPyModel(model='iasp91')
+    dist_list = np.arange(30,100,3)
+    for ii in dist_list:
+        a = model.get_travel_times(source_depth_in_km=h,
+                                   distance_in_degree=ii,
+                                   phase_list=['S'])[0].time
+        ax.plot((a, a),(ii-1, ii+1),'g-')
+
+    dist_list = np.arange(103,130,3)
+    for ii in dist_list:
+        a = model.get_travel_times(source_depth_in_km=h,
+                                   distance_in_degree=ii,
+                                   phase_list=['Sdiff'])[0].time
+        ax.plot((a, a),(ii-1, ii+1),'g-')
+
+    dist_list = np.arange(20,100,3)
+    for ii in dist_list:
+        a = model.get_travel_times(source_depth_in_km=h,
+                                   distance_in_degree=ii,
+                                   phase_list=['P'])[0].time
+        ax.plot((a, a),(ii-1, ii+1),'r-')
+
+    dist_list = np.arange(103,130,3)
+    for ii in dist_list:
+        a = model.get_travel_times(source_depth_in_km=h,
+                                   distance_in_degree=ii,
+                                   phase_list=['Pdiff'])[0].time
+        ax.plot((a, a),(ii-1, ii+1),'r-')
+
+    dist_list = np.arange(20,160,3)
+    for ii in dist_list:
+        a = model.get_travel_times(source_depth_in_km=h,
+                                   distance_in_degree=ii,
+                                   phase_list=['SS'])[0].time
+        ax.plot((a, a),(ii-1, ii+1),'c-')
+    dist_list = np.arange(20,160,3)
+    for ii in dist_list:
+        a = model.get_travel_times(source_depth_in_km=h,
+                                   distance_in_degree=ii,
+                                   phase_list=['PP'])[0].time
+        ax.plot((a, a),(ii-1, ii+1),'m-')
 
 def simple_section(st,**kwargs):
     '''
@@ -58,14 +122,12 @@ def simple_section(st,**kwargs):
     xlim = kwargs.get('x_lim',None)
     ylim = kwargs.get('y_lim',None)
     title = kwargs.get('title','')
-    #model = kwargs.get('model','prem')
     model = TauPyModel(model='iasp91')
 
     if fig == None and ax == None:
         fig,ax = plt.subplots(figsize=(9,12))
         plt.tight_layout()
-    else:
-        print('using outside figure')
+
     ax.set_xlabel('Time (s)')
     ax.set_ylabel(mode)
     ax.set_title(title)
@@ -82,8 +144,8 @@ def simple_section(st,**kwargs):
 
     def randcolor():
         c_list = ['#1f77b4','#ff7f0e','#2ca02c',
-                  '#d62728','#9467bd','#8c564b',
-                  '#e377c2','#7f7f7f','#bcbd22','#17becf']
+                   '#d62728','#9467bd','#8c564b',
+                   '#e377c2','#7f7f7f','#bcbd22','#17becf']
         return c_list[np.random.randint(len(c_list))]
 
     if a_list == True:
@@ -129,7 +191,8 @@ def simple_section(st,**kwargs):
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
 
-    plt.show()
+    if fig == None and ax == None:
+        plt.show()
 
 main()
 

@@ -1,0 +1,110 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : simple_single
+Purpose : plot all components of one station
+Creation Date : 14-08-2017
+Last Modified : Mon 14 Aug 2017 01:57:02 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+import numpy as np
+from matplotlib import pyplot as plt
+import obspy
+from obspy.taup import TauPyModel
+import argparse
+
+def main():
+    parser = argparse.ArgumentParser(
+                       description='Measure and record traveltime delays')
+    parser.add_argument('-st','--stream',metavar='N',type=str,
+                        help='synth',default='synth')
+    parser.add_argument('-p','--phase',metavar='N',type=str,
+                        help='Name of phase',default=False)
+    parser.add_argument('--fmin',default=1./100,type=float,
+                        help='Minimum frequency')
+    parser.add_argument('--fmax',default=1./1,type=float,
+                        help='Maximum frequency')
+    parser.add_argument('--stride',default=10,type=int,
+                        help='Stride of data')
+    args = parser.parse_args()
+
+    if args.stream == 'synth':
+        print('read Z')
+        stz = obspy.read('sts_Z.h5')
+        stz.filter('highpass',freq=1./100.)
+        print('read R')
+        stR = obspy.read('sts_R.h5')
+        stR.filter('highpass',freq=1./100.)
+        print('read T')
+        stt = obspy.read('sts_T.h5')
+        stt.filter('highpass',freq=1./100.)
+        print('read E')
+        ste = obspy.read('sts_E.h5')
+        ste.filter('highpass',freq=1./100.)
+        print('read N')
+        stn = obspy.read('sts_N.h5')
+        stn.filter('highpass',freq=1./100.)
+
+    stz.sort(['gcarc'])
+    ste.sort(['gcarc'])
+    stn.sort(['gcarc'])
+    stR.sort(['gcarc'])
+    stt.sort(['gcarc'])
+
+    fig,ax = plt.subplots(2,1,figsize=(12,7))
+    plt.figtext(0.5,0.5,'h: {}km'.format(stz[0].stats.evdp))
+    i = 212
+    gcarc = stt[i].stats.gcarc
+    plt.figtext(0.5,0.4,gcarc)
+
+    name = stt[i].stats.station+stt[i].stats.network
+    t = np.linspace(stt[i].stats.o,
+                    stt[i].stats.endtime-stt[i].stats.starttime+stt[i].stats.o,
+                    num=stt[i].stats.npts)
+    ax[1].plot(t,stt[i].data,alpha=1.0,color='teal')
+    print stt[i].stats.gcarc,stt[i].stats.az
+    for tr in stz:
+        if tr.stats.station+tr.stats.network == name:
+            ax[1].plot(t,tr.data,alpha=0.5,color='k')
+            ax[0].plot(t,tr.data,alpha=0.5,color='k')
+            print tr.stats.gcarc,tr.stats.az
+    for tr in stR:
+        if tr.stats.station+tr.stats.network == name:
+            ax[1].plot(t,tr.data,alpha=0.5,color='r')
+            print tr.stats.gcarc,tr.stats.az
+    for tr in stn:
+        if tr.stats.station+tr.stats.network == name:
+            ax[0].plot(t,tr.data,alpha=0.5,color='r')
+            print tr.stats.gcarc,tr.stats.az
+    for tr in ste:
+        if tr.stats.station+tr.stats.network == name:
+            ax[0].plot(t,tr.data,alpha=0.5,color='teal')
+            print tr.stats.gcarc,tr.stats.az
+
+    plot_taup(ax[1],stt[i].stats.evdp,stt[i].stats.gcarc)
+    plot_taup(ax[0],stt[i].stats.evdp,stt[i].stats.gcarc)
+    plt.show()
+
+def plot_taup(ax,h,dist):
+    model = TauPyModel(model='iasp91')
+    a = model.get_travel_times(source_depth_in_km=h,
+                               distance_in_degree=dist,
+                               phase_list=['SP','PS','P','PP','PPP','S',
+                                           'PcP','ScS','Sdiff','Pdiff','SS',
+                                           'SSS','SKS','SKIKS'])
+    c = ['#1f77b4','#ff7f0e','#2ca02c',
+         '#d62728','#9467bd','#8c564b',
+         '#d62728','#9467bd','#8c564b',
+         '#e377c2','#7f7f7f','#bcbd22',
+         '#e377c2','#7f7f7f','#bcbd22','#17becf']
+    for idx,ii in enumerate(a):
+        ax.axvline(ii.time,color=c[idx])
+        ax.text(ii.time,0,ii.name)
+
+main()
+
