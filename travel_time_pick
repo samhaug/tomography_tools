@@ -12,7 +12,7 @@ Created By : Samuel M. Haugland
 ==============================================================================
 '''
 
-from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean
+from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num
 from numpy.fft import fft,fftfreq
 from os import listdir,getcwd
 from matplotlib import pyplot as plt
@@ -51,28 +51,45 @@ def main():
     write_branch(fname,branch_list)
     write_f_resp(fname,args.fmin,args.fmax)
     std,sts = read_streams(args.data,args.synth)
-    std.differentiate()
-    sts.differentiate()
+    for tr in std:
+        try:
+            tr.differentiate()
+        except ValueError:
+            continue
+    for tr in sts:
+        try:
+            tr.differentiate()
+        except ValueError:
+            continue
     print len(std),len(sts)
     welcome_message(args,std)
     std,sts = phase_range(std,sts,args.phase)
     std.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
     sts.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
     now = time.time()
+    i = 0
     for idx,ii in enumerate(range(0,len(std),args.stride)):
         total = len(range(0,len(std),args.stride))
         print '{}%'.format(round(float(idx)/total*100.))
-        tobs,corcoeft,m1,m2,s_amp,d_amp,del_t,key,SNR,amp_rat=find_ttime(
+        try:
+            tobs,corcoeft,m1,m2,s_amp,d_amp,del_t,key,SNR,amp_rat=find_ttime(
                                        std[ii],sts[ii],[args.phase],
-                                       (-1*args.window,args.window),args.plot)
+                                       (-1*args.window,args.window),args.plot,args)
+        except ValueError:
+            continue
+        if key == 'escape':
+            break
+        if key == 'alt':
+            continue
+        if SNR < 1.5:
+            continue
+        if corcoeft < 0.75:
+            continue
         if key == 'control':
             write_traveltime(fname,std[ii],1.0,tobs,corcoeft,1.0,args.window,0)
             write_amplitude(amp_fname,std[ii],1.0,tobs,corcoeft,m1,
                             m2,s_amp,d_amp,del_t,SNR,amp_rat)
-        elif key == 'alt':
-            continue
-        elif key == 'escape':
-            break
+            i += 1
         else:
             print('control to keep')
             print('alt to discard')
@@ -82,6 +99,8 @@ def main():
     rate = (len(std)/args.stride)/(then-now)
     print 'Total time: {} sec\n'.format(then-now)
     print 'Your rate: {} traces/sec\n'.format(rate)
+    print '{} Proposed picks\n'.format(idx)
+    print '{} Accepted picks\n'.format(i)
 
 def welcome_message(args,st):
     print('#######################################')
@@ -101,7 +120,7 @@ def welcome_message(args,st):
         print('Plotting is off')
     print('#######################################')
 
-def find_ttime(data_tr,synth_tr,phase,window_tuple,plot):
+def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     samp = data_tr.stats.sampling_rate
     d_o = data_tr.stats.o
     d_st = data_tr.stats.starttime
@@ -130,8 +149,7 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot):
                        s_st+time+s_o+window_tuple[1]).data
 
     t = linspace(window_tuple[0],window_tuple[1],num=len(d))
-    T = 1./monochrome(t,s)
-    print T
+    T = 1./args.fmax
     SNR = round(max(abs(d))/max(abs(n)),2)
     correl = correlate(s,d,mode='same')
     tobs = (len(d)/2.-argmax(correl))/samp+time
@@ -143,8 +161,9 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot):
     shift_s = roll(s,int(samp*(del_t)))
     mid = int(len(shift_s)/2.)
 
-    cs = shift_s[mid+int(samp*(del_t))-int(T*samp/2.):mid+int(samp*(del_t))+int(T*samp/2.)]
-    cd = d[mid+int(samp*(del_t))-int(T*samp/2.):mid+int(samp*(del_t))+int(T*samp/2.)]
+    cs = shift_s[mid+int(samp*(del_t))-int(T*1.5*samp):mid+int(samp*(del_t))+int(T*1.5*samp)]
+    cd = d[mid+int(samp*(del_t))-int(T*1.5*samp):mid+int(samp*(del_t))+int(T*1.5*samp)]
+    tc = linspace(int(-T*1.5),int(T*1.5),num=len(cs))
 
     m1 = round(max(correlate(cd,cs))/max(correlate(cs,cs)),3)
     m2 = round(max(correlate(cd,cd))/max(correlate(cd,cs)),3)
@@ -179,25 +198,35 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot):
         ax1.plot(ts_full,synth_tr.data,color='r')
         ax1.set_xlim(time+synth_tr.stats.o-200,time+synth_tr.stats.o+200)
         ax1.set_ylim(data_tr.data.min()*1.4,data_tr.data.max()*1.4)
-        ax3.plot(cs,color='r')
-        ax3.plot(cd,color='k')
+        ax3.plot(tc,cs,color='r')
+        ax3.plot(tc,cd,color='k')
         ax2.plot(t,d,color='k')
         ax2.plot(t,s,color='r')
         ax2.plot(t,shift_s,color='r',ls='--')
         ax2.plot(t,roll(s,int(samp*(del_t+1))),color='b',ls='--',alpha=0.3)
         ax2.plot(t,roll(s,int(samp*(del_t-1))),color='g',ls='--',alpha=0.3)
         ax2.set_xlabel('Time (s)')
+        ax3.set_xlabel('Time (s)')
 
         ax2.set_title('{} Lat:{} Lon:{} H:{}'.format(str(synth_tr.stats.starttime),
                                                        str(round(data_tr.stats.evla)),
                                                        str(round(data_tr.stats.evlo)),
                                                        str(round(data_tr.stats.evdp))))
-        ax1.set_title('Net: {} Stat: {} Az: {} Gcarc: {}'.format(data_tr.stats.network,
+        ax1.set_title('Net: {} Stat: {} stla: {} stlo: {} Az: {} Gcarc: {}'.format(data_tr.stats.network,
                                                        data_tr.stats.station,
+                                                       str(round(data_tr.stats.stla)),
+                                                       str(round(data_tr.stats.stlo)),
                                                        str(round(data_tr.stats.az)),
                                                        str(round(data_tr.stats.gcarc))))
 
         clicks = ClickSelect()
+        fig = plt.gcf()
+        if nan_to_num(SNR) < 1.5 or nan_to_num(corcoeft) < 0.75 or nan_to_num(amp_rat) < 0.2:
+            fig.set_facecolor('red')
+        elif nan_to_num(SNR) > 100 or nan_to_num(corcoeft) > 100 or nan_to_num(amp_rat) > 5:
+            fig.set_facecolor('red')
+        else:
+            fig.set_facecolor('limegreen')
         plt.show()
         key = clicks.key
     else:
