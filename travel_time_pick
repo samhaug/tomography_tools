@@ -12,7 +12,7 @@ Created By : Samuel M. Haugland
 ==============================================================================
 '''
 
-from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num
+from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num,zeros
 from numpy.fft import fft,fftfreq
 from os import listdir,getcwd
 from matplotlib import pyplot as plt
@@ -30,7 +30,7 @@ def main():
                        description='Measure and record traveltime delays')
     parser.add_argument('-p','--phase',metavar='N',type=str,
                         help='Name of phase')
-    parser.add_argument('-w','--window',default=30,type=int,
+    parser.add_argument('-w','--window',default=40,type=int,
                         help='Half of the window length')
     parser.add_argument('--fmin',default=1./100,type=float,
                         help='Minimum frequency')
@@ -61,7 +61,6 @@ def main():
             tr.differentiate()
         except ValueError:
             continue
-    print len(std),len(sts)
     welcome_message(args,std)
     std,sts = phase_range(std,sts,args.phase)
     std.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
@@ -71,19 +70,21 @@ def main():
     for idx,ii in enumerate(range(0,len(std),args.stride)):
         total = len(range(0,len(std),args.stride))
         print '{}%'.format(round(float(idx)/total*100.))
-        try:
-            tobs,corcoeft,m1,m2,s_amp,d_amp,del_t,key,SNR,amp_rat=find_ttime(
+        #try:
+        tobs,corcoeft,m1,m2,s_amp,d_amp,del_t,key,SNR,amp_rat=find_ttime(
                                        std[ii],sts[ii],[args.phase],
                                        (-1*args.window,args.window),args.plot,args)
-        except ValueError:
-            continue
+        #except ValueError:
+        #    continue
         if key == 'escape':
             break
         if key == 'alt':
             continue
         if SNR < 1.5:
             continue
-        if corcoeft < 0.75:
+        elif corcoeft < 0.75:
+            continue
+        elif amp_rat < 0.2 or amp_rat > 5:
             continue
         if key == 'control':
             write_traveltime(fname,std[ii],1.0,tobs,corcoeft,1.0,args.window,0)
@@ -120,6 +121,11 @@ def welcome_message(args,st):
         print('Plotting is off')
     print('#######################################')
 
+def npcorr(s,d,samp):
+    correl = correlate(s,d,mode='same')
+    ts = round((len(d)/2.-argmax(correl))/samp,2)
+    return ts
+
 def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     samp = data_tr.stats.sampling_rate
     d_o = data_tr.stats.o
@@ -151,25 +157,42 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     t = linspace(window_tuple[0],window_tuple[1],num=len(d))
     T = 1./args.fmax
     SNR = round(max(abs(d))/max(abs(n)),2)
-    correl = correlate(s,d,mode='same')
-    tobs = (len(d)/2.-argmax(correl))/samp+time
-    tobs = round(tobs,2)
     s_amp = max(abs(s))
     d_amp = max(abs(d))
     amp_rat = round(s_amp/d_amp,2)
-    del_t = round(tobs-time,2)
-    shift_s = roll(s,int(samp*(del_t)))
-    mid = int(len(shift_s)/2.)
+    #First correlation
+    del_t = npcorr(s,d,samp)
+    roll_s = roll(s,int(samp*del_t))
+    mid = int(len(s)/2.)
+    cs  = s[mid-int(samp*T):mid+int(samp*T)]
+    cd  = d[mid+int(samp*(del_t-T)):mid+int(samp*(del_t+T))]
+    #Second correlation
+    update_t = npcorr(cs,cd,samp)
+    update_cs = roll(cs,int(samp*update_t))
 
-    cs = shift_s[mid+int(samp*(del_t))-int(T*1.5*samp):mid+int(samp*(del_t))+int(T*1.5*samp)]
-    cd = d[mid+int(samp*(del_t))-int(T*1.5*samp):mid+int(samp*(del_t))+int(T*1.5*samp)]
-    tc = linspace(int(-T*1.5),int(T*1.5),num=len(cs))
-
+    tcs = linspace(int(-T),int(T),num=len(cs))
+    tcd = linspace(int(-T),int(T),num=len(cd))
     m1 = round(max(correlate(cd,cs))/max(correlate(cs,cs)),3)
     m2 = round(max(correlate(cd,cd))/max(correlate(cd,cs)),3)
+    update_m1 = round(max(correlate(cd,update_cs))/max(correlate(update_cs,update_cs)),3)
+    update_m2 = round(max(correlate(cd,cd))/max(correlate(cd,update_cs)),3)
     corcoeft = round(1-((m2-m1)/m2),3)
+    update_corcoeft = round(1-((update_m2-update_m1)/update_m2),3)
+    tobs = del_t+update_t+time
 
     if plot == True:
+        if phase[0] == 'S':
+            ds_time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
+                              distance_in_degree=data_tr.stats.gcarc,
+                              phase_list=['s'+phase[0]])[0].time
+            dp_time = 0
+        if phase[0] == 'P':
+            dp_time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
+                              distance_in_degree=data_tr.stats.gcarc,
+                              phase_list=['p'+phase[0]])[0].time
+            ds_time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
+                              distance_in_degree=data_tr.stats.gcarc,
+                              phase_list=['s'+phase[0]])[0].time
         class ClickSelect(object):
             def __init__(self):
                 self.key = None
@@ -181,38 +204,39 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                 return True
 
         gs = gridspec.GridSpec(2, 20)
-        ax1 = plt.subplot(gs[-1,:])
-        ax2 = plt.subplot(gs[0,0:10])
-        ax3 = plt.subplot(gs[0,10::])
-        ax3.yaxis.set_ticklabels([])
-        plt.figtext(0.1,0.95,'press ctrl to save')
-        plt.figtext(0.2,0.35,'M1: {} \nM2: {} \nStNR: {}\n S/D: {} \ncor: {}\ndel_t: {}'.format(
-                    m1,m2,SNR,amp_rat,corcoeft,del_t),size=18)
-        td_full = linspace(-1*d_o,
-                           d_et-d_st-d_o,
+        ax_bot = plt.subplot(gs[-1,:])
+        ax_left = plt.subplot(gs[0,0:10])
+        ax_right = plt.subplot(gs[0,10::])
+        ax_right.yaxis.set_ticklabels([])
+        td_full = linspace(-1*d_o,d_et-d_st-d_o,
                            num=data_tr.stats.npts)
-        ts_full = linspace(-1*s_o,
-                           s_et-s_st-s_o,
+        ts_full = linspace(-1*s_o,s_et-s_st-s_o,
                            num=synth_tr.stats.npts)
-        ax1.plot(td_full,data_tr.data,color='k')
-        ax1.plot(ts_full,synth_tr.data,color='r')
-        ax1.set_xlim(time+synth_tr.stats.o-200,time+synth_tr.stats.o+200)
-        ax1.set_ylim(data_tr.data.min()*1.4,data_tr.data.max()*1.4)
-        ax3.plot(tc,cs,color='r')
-        ax3.plot(tc,cd,color='k')
-        ax2.plot(t,d,color='k')
-        ax2.plot(t,s,color='r')
-        ax2.plot(t,shift_s,color='r',ls='--')
-        ax2.plot(t,roll(s,int(samp*(del_t+1))),color='b',ls='--',alpha=0.3)
-        ax2.plot(t,roll(s,int(samp*(del_t-1))),color='g',ls='--',alpha=0.3)
-        ax2.set_xlabel('Time (s)')
-        ax3.set_xlabel('Time (s)')
+        ax_bot.plot(td_full,data_tr.data,color='k')
+        ax_bot.plot(ts_full,synth_tr.data,color='r')
+        ax_bot.set_xlim(time+synth_tr.stats.o-200,time+synth_tr.stats.o+200)
+        ax_bot.set_ylim(data_tr.data.min()*1.4,data_tr.data.max()*1.4)
+        ax_right.plot(tcs,update_cs,color='r')
+        ax_right.plot(tcd,cd,color='k')
+        ax_right.plot(tcs,roll(update_cs,int(samp*(1))),color='b',ls='--',alpha=0.3)
+        ax_right.plot(tcs,roll(update_cs,int(samp*(-1))),color='g',ls='--',alpha=0.3)
 
-        ax2.set_title('{} Lat:{} Lon:{} H:{}'.format(str(synth_tr.stats.starttime),
+        ax_left.plot(t,d,color='k')
+        ax_left.plot(t,s,color='r')
+        ax_left.plot(t,roll(s,int(samp*(del_t))),color='r',ls='--')
+        ax_left.plot(t,roll(s,int(samp*(del_t+1))),color='b',ls='--',alpha=0.3)
+        ax_left.plot(t,roll(s,int(samp*(del_t-1))),color='g',ls='--',alpha=0.3)
+        ax_left.set_xlabel('Time (s)')
+        ax_right.set_xlabel('Time (s)')
+        ax_bot.axvline(time,color='k')
+        ax_bot.axvline(ds_time,color='k')
+        ax_bot.axvline(dp_time,color='k')
+
+        ax_left.set_title('{} Lat:{} Lon:{} H:{}'.format(str(synth_tr.stats.starttime),
                                                        str(round(data_tr.stats.evla)),
                                                        str(round(data_tr.stats.evlo)),
                                                        str(round(data_tr.stats.evdp))))
-        ax1.set_title('Net: {} Stat: {} stla: {} stlo: {} Az: {} Gcarc: {}'.format(data_tr.stats.network,
+        ax_bot.set_title('Net: {} Stat: {} stla: {} stlo: {} Az: {} Gcarc: {}'.format(data_tr.stats.network,
                                                        data_tr.stats.station,
                                                        str(round(data_tr.stats.stla)),
                                                        str(round(data_tr.stats.stlo)),
@@ -227,6 +251,10 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
             fig.set_facecolor('red')
         else:
             fig.set_facecolor('limegreen')
+        plt.figtext(0.1,0.95,'press ctrl to save')
+        plt.figtext(0.2,0.34,'M1: {} \n M2: {} \n S/D: {} \n StNR: {}'.format(
+                    m1,m2,amp_rat,SNR),size=18)
+        plt.figtext(0.55,0.55,'del_t: {}s \n update: {}s \n corr:{} \n update_corr: {}'.format(del_t,update_t,corcoeft,update_corcoeft),size=18)
         plt.show()
         key = clicks.key
     else:
