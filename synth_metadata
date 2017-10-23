@@ -20,61 +20,72 @@ def main():
     std_Z = obspy.read('st_Z.h5')
     sts_Z = obspy.core.Stream()
     for tr in std_Z:
-        st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
-                                             tr.stats.station,
-                                             tr.stats.location,
-                                             tr.stats.channel))
-        st[0].stats.baz = tr.stats.baz
-        st[0].stats.az = tr.stats.az
-        st[0].stats.gcarc = tr.stats.gcarc
-        st[0].stats.o = 0
-        st[0].stats.evla = tr.stats.evla
-        st[0].stats.evlo = tr.stats.evlo
-        st[0].stats.stla = tr.stats.stla
-        st[0].stats.stlo = tr.stats.stlo
-        st[0].stats.evdp = tr.stats.evdp
-        st[0].stats.stel = tr.stats.stel
-        sts_Z.append(st[0])
+        try:
+            st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
+                                                 tr.stats.station,
+                                                 tr.stats.location,
+                                                 tr.stats.channel))
+            st[0].stats.baz = tr.stats.baz
+            st[0].stats.az = tr.stats.az
+            st[0].stats.gcarc = tr.stats.gcarc
+            st[0].stats.o = 0
+            st[0].stats.evla = tr.stats.evla
+            st[0].stats.evlo = tr.stats.evlo
+            st[0].stats.stla = tr.stats.stla
+            st[0].stats.stlo = tr.stats.stlo
+            st[0].stats.evdp = tr.stats.evdp
+            st[0].stats.stel = tr.stats.stel
+            sts_Z.append(st[0])
+        except IOError:
+            continue
     sts_Z.write('sts_Z.h5',format='H5')
 
     std_E = obspy.read('st_E.h5')
     sts_E = obspy.core.Stream()
+
     for tr in std_E:
-        st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
-                                             tr.stats.station,
-                                             tr.stats.location,
-                                             tr.stats.channel))
-        st[0].stats.baz = tr.stats.baz
-        st[0].stats.az = tr.stats.az
-        st[0].stats.gcarc = tr.stats.gcarc
-        st[0].stats.o = 0
-        st[0].stats.evla = tr.stats.evla
-        st[0].stats.evlo = tr.stats.evlo
-        st[0].stats.stla = tr.stats.stla
-        st[0].stats.stlo = tr.stats.stlo
-        st[0].stats.evdp = tr.stats.evdp
-        st[0].stats.stel = tr.stats.stel
-        sts_E.append(st[0])
+        try:
+            st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
+                                                 tr.stats.station,
+                                                 tr.stats.location,
+                                                 tr.stats.channel))
+            st[0].stats.baz = tr.stats.baz
+            st[0].stats.az = tr.stats.az
+            st[0].stats.gcarc = tr.stats.gcarc
+            st[0].stats.o = 0
+            st[0].stats.evla = tr.stats.evla
+            st[0].stats.evlo = tr.stats.evlo
+            st[0].stats.stla = tr.stats.stla
+            st[0].stats.stlo = tr.stats.stlo
+            st[0].stats.evdp = tr.stats.evdp
+            st[0].stats.stel = tr.stats.stel
+            sts_E.append(st[0])
+        except IOError:
+            continue
     sts_E.write('sts_E.h5',format='H5')
 
     std_N = obspy.read('st_N.h5')
     sts_N = obspy.core.Stream()
     for tr in std_N:
-        st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
-                                             tr.stats.station,
-                                             tr.stats.location,
-                                             tr.stats.channel))
-        st[0].stats.baz = tr.stats.baz
-        st[0].stats.az = tr.stats.az
-        st[0].stats.gcarc = tr.stats.gcarc
-        st[0].stats.o = 0
-        st[0].stats.evla = tr.stats.evla
-        st[0].stats.evlo = tr.stats.evlo
-        st[0].stats.stla = tr.stats.stla
-        st[0].stats.stlo = tr.stats.stlo
-        st[0].stats.evdp = tr.stats.evdp
-        st[0].stats.stel = tr.stats.stel
-        sts_N.append(st[0])
+        try:
+            st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
+                                                 tr.stats.station,
+                                                 tr.stats.location,
+                                                 tr.stats.channel))
+            st[0].stats.baz = tr.stats.baz
+            st[0].stats.az = tr.stats.az
+            st[0].stats.gcarc = tr.stats.gcarc
+            st[0].stats.o = 0
+            st[0].stats.evla = tr.stats.evla
+            st[0].stats.evlo = tr.stats.evlo
+            st[0].stats.stla = tr.stats.stla
+            st[0].stats.stlo = tr.stats.stlo
+            st[0].stats.evdp = tr.stats.evdp
+            st[0].stats.stel = tr.stats.stel
+            sts_N.append(st[0])
+        except IOError:
+            continue
+    sts_E.write('sts_E.h5',format='H5')
     sts_N.write('sts_N.h5',format='H5')
 main()
 
