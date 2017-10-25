@@ -38,11 +38,11 @@ def plot_coords(slat,slon,rlat,rlon,del_t):
 
 def ray_paths(fname):
     a = np.genfromtxt(fname,skip_header=210)
-    slat = a[:,5]
-    slon = a[:,6]
-    rlat = a[:,8]
-    rlon = a[:,9]
-    del_t = a[:,12]
+    slat = a[:,6]
+    slon = a[:,7]
+    rlat = a[:,9]
+    rlon = a[:,10]
+    del_t = a[:,13]
     return slat,slon,rlat,rlon,del_t
 main()
 
