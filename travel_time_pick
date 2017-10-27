@@ -220,7 +220,7 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                            num=synth_tr.stats.npts)
         ax_bot.plot(td_full,data_tr.data,color='k')
         ax_bot.plot(ts_full,synth_tr.data,color='r')
-        ax_bot.set_xlim(time+synth_tr.stats.o-200,time+synth_tr.stats.o+200)
+        ax_bot.set_xlim(time+synth_tr.stats.o-400,time+synth_tr.stats.o+400)
         ax_bot.set_ylim(data_tr.data.min()*1.4,data_tr.data.max()*1.4)
         ax_right.plot(tcs,cs,color='r')
         ax_right.plot(tcs,update_cs,color='r',ls='--')
@@ -236,17 +236,18 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
         ax_left.set_xlabel('Time (s)')
         ax_right.set_xlabel('Time (s)')
         ax_bot.axvline(time,color='k')
-        ax_bot.axvspan(time+synth_tr.stats.o-200,time+synth_tr.stats.o-100,color='r',alpha=0.3)
-        ax_bot.axvspan(time+synth_tr.stats.o-100,time+synth_tr.stats.o-50,color='g',alpha=0.3)
-        ax_bot.axvspan(time+synth_tr.stats.o-270,time+synth_tr.stats.o-30,color='b',alpha=0.3)
+        ax_bot.axvspan(itime+synth_tr.stats.o-200,itime+synth_tr.stats.o-100,color='r',alpha=0.3)
+        ax_bot.axvspan(itime+synth_tr.stats.o-100,itime+synth_tr.stats.o-50,color='g',alpha=0.3)
+        ax_bot.axvspan(itime+synth_tr.stats.o-270,itime+synth_tr.stats.o-30,color='b',alpha=0.3)
         ax_bot.axvspan(time+synth_tr.stats.o+window_tuple[0],time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
         ax_bot.axvline(ds_time,color='k')
         ax_bot.axvline(dp_time,color='k')
 
-        ax_left.set_title('{} Lat:{} Lon:{} H:{}'.format(str(synth_tr.stats.starttime),
+        ax_left.set_title('{} Lat:{} Lon:{} H:{}km Mw {}'.format(str(synth_tr.stats.starttime),
                                                        str(round(data_tr.stats.evla)),
                                                        str(round(data_tr.stats.evlo)),
-                                                       str(round(data_tr.stats.evdp))))
+                                                       str(round(data_tr.stats.evdp)),
+                                                       str(round(data_tr.stats.mag))))
         ax_bot.set_title('Net: {} Stat: {} stla: {} stlo: {} Az: {} Gcarc: {}'.format(data_tr.stats.network,
                                                        data_tr.stats.station,
                                                        str(round(data_tr.stats.stla)),

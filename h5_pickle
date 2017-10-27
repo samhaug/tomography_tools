@@ -1,0 +1,12 @@
+#!/bin/bash
+
+echo 'data_metadata'
+data_metadata
+echo 'synth_metadata'
+synth_metadata
+echo 'rotate_data'
+rotate_data
+echo 'rotate_synth'
+rotate_synth
+echo 'remove_excess'
+remove_excess

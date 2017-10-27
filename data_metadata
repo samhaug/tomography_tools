@@ -59,6 +59,7 @@ def meta_data(stream,ev_time):
         tr.stats.az = tr.stats.sac['az']
         tr.stats.baz = tr.stats.sac['baz']
         tr.stats.stel = tr.stats.sac['stel']
+        tr.stats.mag = tr.stats.sac['mag']
     return st
 
 main()
