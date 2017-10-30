@@ -26,7 +26,7 @@ elif [ $2 == 4 ]; then
     max_date=$(($date+1))-01-01
 fi
 
-min_depth=10
+min_depth=5
 max_depth=700
 #cut_time_phase='P'
 preset=0
@@ -36,7 +36,7 @@ event_catalog='NEIC_USGS'
 min_mag='6.2'
 max_mag='7.2'
 cha='BHE,BHN,BHZ,BH1,BH2'
-min_epi=10
+min_epi=2
 max_epi=180
 
 datapath=$date"_"$2

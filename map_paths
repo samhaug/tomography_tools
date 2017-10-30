@@ -23,7 +23,7 @@ def main():
     plot_coords(slat,slon,rlat,rlon,del_t)
 
 def plot_coords(slat,slon,rlat,rlon,del_t):
-    m = Basemap(projection='cyl')
+    m = Basemap(projection='aeqd',lon_0=slon[0],lat_0=slat[0])
     m.drawcoastlines()
     for ii in range(len(del_t)):
         stlo,stla = m(rlon[ii],rlat[ii])
@@ -37,7 +37,7 @@ def plot_coords(slat,slon,rlat,rlon,del_t):
     plt.show()
 
 def ray_paths(fname):
-    a = np.genfromtxt(fname,skip_header=210)
+    a = np.genfromtxt(fname,skip_header=215)
     slat = a[:,6]
     slon = a[:,7]
     rlat = a[:,9]
