@@ -22,7 +22,7 @@ def main():
     datapath = argv[1]
     e_lines = exceptions(datapath)
     a_lines,coord = available(datapath)
-    #print 'available: ',int(float(len(a_lines))/3.)
+    print 'available: ',int(float(len(a_lines))/3.)
     #print 'excluded: ',len(e_lines)
     a_coord = avail_coords(a_lines,e_lines,coord)
     evla,evlo = stat_event(datapath)

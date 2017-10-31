@@ -1,0 +1,206 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : convert_to_raydyntrace
+Purpose : convert output of travel_time_pick to raydyntrace input
+Creation Date : 12-09-2017
+Last Modified : Wed 27 Sep 2017 04:18:24 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num,zeros,where
+from scipy.signal import argrelmax as arm
+from numpy.fft import fft,fftfreq
+from os import listdir,getcwd
+from matplotlib import pyplot as plt
+import matplotlib.gridspec as gridspec
+import obspy
+from scipy.signal import correlate,butter,freqs
+import argparse
+from obspy.taup import TauPyModel
+import time
+model = TauPyModel(model='iasp91')
+
+
+def main():
+    parser = argparse.ArgumentParser(
+                       description='Measure and record traveltime delays')
+    parser.add_argument('-p','--phase',metavar='N',type=str,
+                        help='Name of phase')
+    parser.add_argument('-w','--window',default=30,type=int,
+                        help='Half of the window length')
+    parser.add_argument('--fmin',default=1./100,type=float,
+                        help='Minimum frequency')
+    parser.add_argument('--fmax',default=1./5,type=float,
+                        help='Maximum frequency')
+    parser.add_argument('-d','--data',type=str,
+                        help='Path to data pickle')
+    parser.add_argument('-s','--synth',type=str,
+                        help='Path to synthetic pickle')
+    parser.add_argument('--stride',default=1,type=int,
+                        help='Use every Nth trace in stream')
+    parser.add_argument('--plot',dest='plot',
+                        action='store_true',help='Plot waveforms')
+    args = parser.parse_args()
+    fname = write_header(args.phase,args)
+    #amp_fname = write_amp_header(args.phase,args.fmin,args.fmax)
+    branch_list = phase_info(args.phase)
+    write_branch(fname,branch_list)
+    write_f_resp(fname,args.fmin,args.fmax)
+    std,sts = read_streams(args.data,args.synth)
+    welcome_message(args,std)
+    std,sts = phase_range(std,sts,args.phase)
+    std.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
+    sts.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
+    now = time.time()
+    i = 0
+    for idx,ii in enumerate(range(0,len(std),args.stride)):
+        total = len(range(0,len(std),args.stride))
+        print '{}%'.format(round(float(idx)/total*100.))
+        try:
+            tobs,corcoeft,\
+            m1,m2,update_m1,\
+            update_m2,s_amp,\
+            d_amp,del_t,key,\
+            SNR,amp_rat=\
+            find_ttime(
+            std[ii],sts[ii],[args.phase],
+            (-1*args.window,args.window),args.plot,args)
+        except ValueError:
+            continue
+        if key == 'escape':
+            break
+        if key == 'alt':
+            continue
+        if nan_to_num(min(SNR)) < 1.5 or nan_to_num(corcoeft[1]) < 0.75 or nan_to_num(amp_rat) < 0.14:
+            continue
+        if nan_to_num(max(SNR)) > 15000 or nan_to_num(corcoeft[1]) > 1.5 or nan_to_num(amp_rat) > 7:
+            continue
+        if key == 'control':
+            #write_traveltime(fname,std[ii],1.0,tobs,corcoeft,1.0,args.window,0)
+            write_amplitude(fname,ii,std[ii],
+                            tobs,corcoeft,
+                            m1,m2,
+                            update_m1,update_m2,
+                            s_amp,d_amp,
+                            del_t,SNR,amp_rat)
+            i += 1
+        else:
+            print('control to keep')
+            print('alt to discard')
+            print('esc to leave')
+
+    then = time.time()
+    rate = (len(std)/args.stride)/(then-now)
+    print 'Total time: {} sec\n'.format(then-now)
+    print 'Your rate: {} traces/sec\n'.format(rate)
+    print '{} Proposed picks\n'.format(idx)
+    print '{} Accepted picks\n'.format(i)
+
+def write_traveltime(fname,tr,tsig,tobs,corcoeft,nbt,xcl,tincore):
+    idate=str(tr.stats.starttime.year)[-2::]+'%03d'%tr.stats.starttime.day
+    iotime='%02d%02d%02d'%(tr.stats.starttime.hour,
+                           tr.stats.starttime.minute,
+                           tr.stats.starttime.second)
+    ievt='1'
+    kluster='0'
+    stationcode=tr.stats.station
+    netw=tr.stats.network
+    comp=tr.stats.channel
+    slat=round(tr.stats.evla,2)
+    slon=round(tr.stats.evlo,2)
+    sdep=round(tr.stats.evdp,2)
+    rlat=round(tr.stats.stla,2)
+    rlon=round(tr.stats.stlo,2)
+    relev=0.0
+    nobst=1
+    nobsa=0
+    #number of polar crossings
+    kpole=0
+    line_2 = '1 0 00\n'
+    line_3 = '1\n'
+    line_5 = '0\n'
+    with open(fname,'a') as f:
+        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
+                str(idate),
+                str(iotime),
+                str(ievt),
+                str(kluster),
+                stationcode,
+                netw,
+                comp,
+                str(slat),
+                str(slon),
+                str(sdep),
+                str(rlat),
+                str(rlon),
+                str(relev),
+                str(nobst),
+                str(nobsa),
+                str(kpole),
+                ))
+        f.write(line_2)
+        f.write(line_3)
+        f.write('{} {} {} {} {} {}\n'.format(
+                 str(tobs),
+                 str(tsig),
+                 str(corcoeft[1]),
+                 str(int(nbt)),
+                 str(2.*xcl),
+                 str(int(tincore))))
+        f.write(line_5)
+
+def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t,SNR,amp_rat):
+    idate=str(tr.stats.starttime.year)[-2::]+'%03d'%tr.stats.starttime.day
+    iotime='%02d%02d%02d'%(tr.stats.starttime.hour,
+                           tr.stats.starttime.minute,
+                           tr.stats.starttime.second)
+    stationcode=tr.stats.station
+    netw=tr.stats.network
+    comp=tr.stats.channel
+    slat=round(tr.stats.evla,2)
+    slon=round(tr.stats.evlo,2)
+    sdep=round(tr.stats.evdp,2)
+    rlat=round(tr.stats.stla,2)
+    rlon=round(tr.stats.stlo,2)
+    relev=0.0
+    #number of polar crossings
+    line_2 = '1 0 00\n'
+    line_3 = '1\n'
+    line_5 = '0\n'
+    with open(fname,'a') as f:
+        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
+                str(ii),
+                str(idate),
+                str(iotime),
+                '%5s'%stationcode,
+                '%3s'%netw,
+                '%3s'%comp,
+                '%1.2f'%slat,
+                '%1.2f'%slon,
+                '%1.1f'%sdep,
+                '%1.1f'%rlat,
+                '%1.1f'%rlon,
+                '%1.2f'%relev,
+                '%1.1f'%tobs,
+                '%1.1f'%del_t,
+                '%1.3f'%corcoeft[0],
+                '%1.3f'%corcoeft[1],
+                '%1.3f'%m1,
+                '%1.3f'%m2,
+                '%1.3f'%update_m1,
+                '%1.3f'%update_m2,
+                '%1.2e'%s_amp,
+                '%1.2e'%d_amp,
+                '%1.2f'%SNR[0],
+                '%1.2f'%SNR[1],
+                '%1.2f'%SNR[2],
+                '%1.2f'%amp_rat,
+                ))
+
+main()
+

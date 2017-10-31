@@ -1,0 +1,82 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : map_S_SS
+Purpose : map S - SS traveltimes
+Creation Date : 12-09-2017
+Last Modified : Mon 18 Sep 2017 04:43:24 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+import numpy as np
+from matplotlib import pyplot as plt
+from sys import argv
+from mpl_toolkits.basemap import Basemap
+import matplotlib.colors as colors
+import matplotlib.cm as cmx
+from glob import glob
+from matplotlib.colorbar import ColorbarBase
+import matplotlib.gridspec as gridspec
+
+
+def main():
+    gs = gridspec.GridSpec(10, 10)
+    cax = plt.subplot(gs[:,0])
+    ax = plt.subplot(gs[:,1::])
+
+    S_dict = ray_paths(glob('*_S.dat')[0])
+    SS_dict = ray_paths(glob('*_SS.dat')[0])
+    stations = set(S_dict.keys()).intersection(set(SS_dict.keys()))
+    print 'Total measurements: ', len(stations)
+    m = Basemap(projection='aeqd',lon_0=S_dict[S_dict.keys()[0]]['slon'],lat_0=S_dict[S_dict.keys()[0]]['slat'],ax=ax)
+    m.drawcoastlines()
+    a = []
+    for ii in stations:
+        a.append(S_dict[ii]['del_t']-SS_dict[ii]['del_t'])
+
+    cm = plt.get_cmap('jet')
+    cNorm  = colors.Normalize(vmin=-10, vmax=10)
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
+
+    fig = plt.gcf()
+    ColorbarBase(cax,cmap=cm,norm=cNorm,orientation='vertical')
+    for ii in stations:
+        del_t = S_dict[ii]['del_t']-SS_dict[ii]['del_t']
+        slat = S_dict[ii]['slat']
+        slon = S_dict[ii]['slon']
+        rlat = S_dict[ii]['rlat']
+        rlon = S_dict[ii]['rlon']
+        colorVal = scalarMap.to_rgba(del_t)
+        plot_coords(m,slat,slon,rlat,rlon,del_t,colorVal)
+    plt.tight_layout()
+    plt.show()
+
+def plot_coords(m,slat,slon,rlat,rlon,del_t,colorVal):
+    stlo,stla = m(rlon,rlat)
+    m.drawgreatcircle(slon,slat,rlon,rlat,
+                      linewidth=1,color=colorVal,alpha=0.5)
+
+def ray_paths(fname):
+    ray_dict = {}
+    a = open(fname,'r').readlines()
+    for ii in a:
+        if len(ii.split()) > 4:
+            b = ii.split()
+            key = str(b[3]+b[4])
+            ray_dict[key] = {}
+            ray_dict[key]['slat'] = float(b[6])
+            ray_dict[key]['slon'] = float(b[7])
+            ray_dict[key]['rlat'] = float(b[9])
+            ray_dict[key]['rlon'] = float(b[10])
+            ray_dict[key]['del_t'] = float(b[13])
+
+    return ray_dict
+main()
+
+
+
+
