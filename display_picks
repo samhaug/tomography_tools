@@ -12,7 +12,7 @@ Created By : Samuel M. Haugland
 ==============================================================================
 '''
 
-from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num,zeros,genfromtxt
+from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num,zeros,genfromtxt,sqrt,where
 from numpy.fft import fft,fftfreq
 from os import listdir,getcwd
 from matplotlib import pyplot as plt
@@ -22,6 +22,7 @@ from scipy.signal import correlate,butter,freqs
 import argparse
 from obspy.taup import TauPyModel
 import time
+from scipy.signal import argrelmax as arm
 model = TauPyModel(model='iasp91')
 
 
@@ -47,7 +48,15 @@ def main():
     parser.add_argument('--fname',type=str,
                         help='Path to amplitude file')
     args = parser.parse_args()
-    st_id = [int(ii) for ii in genfromtxt(args.fname,skip_header=210)[:,0]]
+    #st_id = [int(ii) for ii in genfromtxt(args.fname,skip_header=210)[:,0]]
+    f = open(args.fname,'r').readlines()
+    st_id = []
+    for ii in f:
+        if len(ii.strip().split()) < 5:
+            continue
+        else:
+            st_id.append(int(ii.strip().split()[0]))
+
     fname = write_header(args.phase,args)
     branch_list = phase_info(args.phase)
     write_branch(fname,branch_list)
@@ -60,13 +69,13 @@ def main():
     i = 0
     for idx,ii in enumerate(st_id):
         total = len(st_id)
-        print '{}%'.format(round(float(idx)/total*100.))
+        print ii,'{}%'.format(round(float(idx)/total*100.))
         try:
             tobs,corcoeft,\
             m1,m2,update_m1,\
             update_m2,s_amp,\
             d_amp,del_t,key,\
-            SNR,amp_rat=\
+            SNR,amp_rat,left_rat,right_rat=\
             find_ttime(
             std[ii],sts[ii],[args.phase],
             (-1*args.window,args.window),args.plot,args)
@@ -82,14 +91,14 @@ def main():
                             m1,m2,
                             update_m1,update_m2,
                             s_amp,d_amp,
-                            del_t,SNR,amp_rat)
+                            del_t,SNR,amp_rat,left_rat,right_rat)
             i += 1
         else:
             print('control to keep')
             print('alt to discard')
             print('esc to leave')
 
-    print '{} Proposed picks\n'.format(idx)
+    print '{} Proposed picks\n'.format(len(st_id))
     print '{} Accepted picks\n'.format(i)
 
 def welcome_message(args,st):
@@ -137,11 +146,7 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                               distance_in_degree=data_tr.stats.gcarc,
                               phase_list=phase)[0].time
 
-    n1 = data_tr.slice(d_st+itime+d_o-200,
-                       d_st+itime+d_o-100).data
-    n2 = data_tr.slice(d_st+itime+d_o-100,
-                       d_st+itime+d_o-50).data
-    n3 = data_tr.slice(d_st+itime+d_o-270,
+    n3 = data_tr.slice(d_st+itime+d_o-(1./args.fmin),
                        d_st+itime+d_o-30).data
     d = data_tr.slice(d_st+time+d_o+window_tuple[0],
                       d_st+time+d_o+window_tuple[1]).data
@@ -150,10 +155,10 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
 
     t = linspace(window_tuple[0],window_tuple[1],num=len(d))
     T = (1./args.fmax)*1.5
-    SNR_1 = round((max(d)-min(d))/(max(n1)-min(n1)),2)
-    SNR_2 = round((max(d)-min(d))/(max(n2)-min(n2)),2)
-    SNR_3 = round((max(d)-min(d))/(max(n3)-min(n3)),2)
-    SNR = (SNR_1,SNR_2,SNR_3)
+    SNR_1 = round(max(d)/max(n3),2)
+    SNR_2 = round(max(d)/mean(sqrt(n3**2)),2)
+
+    SNR = (SNR_1,SNR_2)
     s_amp = (max(s)-min(s))
     d_amp = (max(d)-min(d))
     amp_rat = round(s_amp/d_amp,2)
@@ -178,11 +183,30 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     tobs = del_t+update_t+time
     corcoeft = (corcoeft_1,corcoeft_2)
 
+    ss = correlate(s,s,mode='same')
+    sd = correlate(s,d,mode='same')
+    ss_imax = argmax(ss)
+    arm_max = where(arm(ss)[0] == ss_imax)[0]
+    #print max(ss),ss[arm(ss)[0][arm_max+1]][0]
+    try:
+        s_cor_rat = max(ss)/ss[arm(ss)[0][arm_max+1]][0]
+    except IndexError:
+        s_cor_rat = 0
+
+    sd_imax = argmax(sd)
+    arm_max = where(arm(sd)[0] == sd_imax)[0]
+    try:
+        right_rat = round(sd[arm(sd)[0][arm_max+1]][0]/max(sd),2)
+        left_rat = round(sd[arm(sd)[0][arm_max-1]][0]/max(sd),2)
+    except IndexError:
+        right_rat = 0
+        left_rat = 0
+
     if plot == True:
         if phase[0].startswith('S'):
             ds_time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
                               distance_in_degree=data_tr.stats.gcarc,
-                              phase_list=['s'+phase[0]])[0].time
+                              phase_list=['S','SS','SSS','SKS','SKKS','sS'])
             dp_time = 0
         if phase[0] == 'P':
             dp_time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
@@ -201,10 +225,16 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                 plt.close()
                 return True
 
-        gs = gridspec.GridSpec(2, 20)
-        ax_bot = plt.subplot(gs[-1,:])
-        ax_left = plt.subplot(gs[0,0:10])
-        ax_right = plt.subplot(gs[0,10::])
+        gs = gridspec.GridSpec(50, 100)
+        ax_bot = plt.subplot(gs[26:38,:])
+        ax_full = plt.subplot(gs[39:50,:])
+        ax_left = plt.subplot(gs[0:25,0:49])
+        ax_right = plt.subplot(gs[0:25,51::])
+
+        ax_full.yaxis.set_ticklabels([])
+        ax_bot.yaxis.set_ticklabels([])
+        ax_left.yaxis.set_ticklabels([])
+        ax_right.yaxis.set_ticklabels([])
         ax_right.yaxis.set_ticklabels([])
         td_full = linspace(-1*d_o,d_et-d_st-d_o,
                            num=data_tr.stats.npts)
@@ -212,7 +242,10 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                            num=synth_tr.stats.npts)
         ax_bot.plot(td_full,data_tr.data,color='k')
         ax_bot.plot(ts_full,synth_tr.data,color='r')
-        ax_bot.set_xlim(time+synth_tr.stats.o-200,time+synth_tr.stats.o+200)
+        ax_full.plot(td_full,data_tr.data,color='k')
+        ax_full.plot(ts_full,synth_tr.data,color='r')
+        ax_full.set_xlim(0,int(synth_tr.stats.npts/synth_tr.stats.sampling_rate))
+        ax_bot.set_xlim(time+synth_tr.stats.o-400,time+synth_tr.stats.o+400)
         ax_bot.set_ylim(data_tr.data.min()*1.4,data_tr.data.max()*1.4)
         ax_right.plot(tcs,cs,color='r')
         ax_right.plot(tcs,update_cs,color='r',ls='--')
@@ -228,18 +261,21 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
         ax_left.set_xlabel('Time (s)')
         ax_right.set_xlabel('Time (s)')
         ax_bot.axvline(time,color='k')
-        ax_bot.axvspan(time+synth_tr.stats.o-200,time+synth_tr.stats.o-100,color='r',alpha=0.3)
-        ax_bot.axvspan(time+synth_tr.stats.o-100,time+synth_tr.stats.o-50,color='g',alpha=0.3)
-        ax_bot.axvspan(time+synth_tr.stats.o-270,time+synth_tr.stats.o-30,color='b',alpha=0.3)
+        ax_bot.axvspan(itime+synth_tr.stats.o-(1./args.fmin),itime+synth_tr.stats.o-30,color='b',alpha=0.3)
         ax_bot.axvspan(time+synth_tr.stats.o+window_tuple[0],time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
-        ax_bot.axvline(ds_time,color='k')
+        ax_full.axvspan(itime+synth_tr.stats.o-(1./args.fmin),itime+synth_tr.stats.o-30,color='b',alpha=0.3)
+        ax_full.axvspan(time+synth_tr.stats.o+window_tuple[0],time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
+        for ii in ds_time:
+            #ax_bot.axvline(ii.time,color='k')
+            ax_bot.text(ii.time,0,ii.name)
         ax_bot.axvline(dp_time,color='k')
 
-        ax_left.set_title('{} Lat:{} Lon:{} H:{}'.format(str(synth_tr.stats.starttime),
+        ax_left.set_title('{} Lat:{} Lon:{} H:{}km Mw {}'.format(str(synth_tr.stats.starttime),
                                                        str(round(data_tr.stats.evla)),
                                                        str(round(data_tr.stats.evlo)),
-                                                       str(round(data_tr.stats.evdp))))
-        ax_bot.set_title('Net: {} Stat: {} stla: {} stlo: {} Az: {} Gcarc: {}'.format(data_tr.stats.network,
+                                                       str(round(data_tr.stats.evdp)),
+                                                       str(round(data_tr.stats.mag))))
+        ax_right.set_title('Net: {} Stat: {} stla: {} stlo: {} Az: {} Gcarc: {}'.format(data_tr.stats.network,
                                                        data_tr.stats.station,
                                                        str(round(data_tr.stats.stla)),
                                                        str(round(data_tr.stats.stlo)),
@@ -256,16 +292,19 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
             fig.set_facecolor('limegreen')
 
         plt.figtext(0.1,0.95,'press ctrl to save')
-        plt.figtext(0.15,0.30,'M1: {}\nM2: {}\nS/D: {}\nSNR1: {}\nSNR2: {}\nSNR3: {}'\
-                    .format(m1,m2,amp_rat,SNR[0],SNR[1],SNR[2]),size=15)
-        plt.figtext(0.55,0.55,'del_t: {}s\nupdate: {}s\nfinal_t: {}s\ncorr:{}\nupdate_corr: {}'\
+        plt.figtext(0.15,0.30,'M1: {}\nM2: {}\nS/D: {}\nSNR_max: {}\nSNR_mean: {}'\
+                    .format(m1,m2,amp_rat,SNR[0],SNR[1]),size=15)
+
+        plt.figtext(0.40,0.55,'del_t: {}s\nupdate: {}s\nfinal_t: {}s\ncorr:{}\nupdate_corr: {}'\
                     .format(del_t,update_t,del_t+update_t,corcoeft[0],corcoeft[1]),size=15)
+        plt.figtext(0.51,0.51,'R_rat: {}\nL_rat: {}\n'\
+                    .format(right_rat,left_rat),size=15)
         plt.show()
         key = clicks.key
     else:
         key = 'control'
 
-    return tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t+update_t,key,SNR,amp_rat
+    return tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t+update_t,key,SNR,amp_rat,left_rat,right_rat
 
 def read_streams(data_pickle,synth_pickle):
     sts = obspy.read(synth_pickle)
@@ -332,9 +371,9 @@ def write_traveltime(fname,tr,tsig,tobs,corcoeft,nbt,xcl,tincore):
         f.write(line_5)
 
 def write_header(phase_name,args):
-    fmin = str(args.fmin)
-    fmax = str(args.fmax)
-    fname = getcwd().split('/')[-1]+'_'+phase_name+'.rev'
+    fname = '{}_{}_{}.rev'.format(getcwd().split('/')[-1],
+                                  phase_name,
+                                  round(1./args.fmax))
     with open(fname,'w') as f:
         f.write(fname+'\n')
         f.write('None\n')
@@ -363,6 +402,7 @@ def phase_info(phase_name):
         branch_list = ['sSdiff','sSdiff','DONT USE','DONT USE','DONT USE']
     elif phase_name == 'Sdiff':
         branch_list = ['Sdiff','Sdiff','DONT USE','DONT USE','DONT USE']
+
     elif phase_name == 'S':
         branch_list = ['S','S','6371 1 2','3482 2 2','6371 5 0']
     elif phase_name == 'sS':
@@ -372,11 +412,25 @@ def phase_info(phase_name):
         branch_list = ['ScS','ScS','6371 1 2','3482 3 2','6371 5 0']
     elif phase_name == 'ScSScS':
         branch_list = ['ScSScS','ScSScS','6371 1 2','3482 3 2','6371 3 2','3482 3 2','6371 5 0']
+    elif phase_name == 'ScSScSScS':
+        branch_list = ['ScSScSScS','ScSScSScS','6371 1 2','3482 3 2','6371 3 2','3482 3 2','6371 3 2','3482 3 2','6371 5 0']
 
     elif phase_name == 'SS':
-        branch_list = ['SS','SS','6371 0 2','3482 2 2','6371 3 2','3482 2 2','6371 5 0']
+        branch_list = ['SS','SS','6371 1 2','3482 2 2','6371 3 2','3482 2 2','6371 5 0']
+    elif phase_name == 'SSS':
+        branch_list = ['SSS','SSS','6371 1 2','3482 2 2','6371 3 2','3482 2 2','6371 3 2','3482 2 2','6371 5 0']
+
+    elif phase_name == 'SKS':
+        branch_list = ['SKS','SKS','6371 1 2','3482 4 1','3482 4 2','6371 5 0']
+    elif phase_name == 'SKKS':
+        branch_list = ['SKS','SKS','6371 1 2','3482 4 1','3482 3 1','3482 4 2','6371 5 0']
+
     elif phase_name == 'P':
-        branch_list = ['S','S','6371 1 2','3482 2 2','6371 5 0']
+        branch_list = ['P','P','6371 1 1','3482 2 1','6371 5 0']
+    elif phase_name == 'PP':
+        branch_list = ['PP','PP','6371 1 1','3482 2 1','6371 3 1','3482 2 1','6371 5 0']
+    elif phase_name == 'PPP':
+        branch_list = ['PPP','PPP','6371 1 1','3482 2 1','6371 3 1','3482 2 1','6371 3 1','3482 2 1','6371 5 0']
     else:
         print('Phase name first argument')
     return branch_list
@@ -637,7 +691,7 @@ def phase_range(std,sts,phase_name):
 
     return std,sts
 
-def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t,SNR,amp_rat):
+def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t,SNR,amp_rat,left_rat,right_rat):
     idate=str(tr.stats.starttime.year)[-2::]+'%03d'%tr.stats.starttime.day
     iotime='%02d%02d%02d'%(tr.stats.starttime.hour,
                            tr.stats.starttime.minute,
@@ -656,7 +710,7 @@ def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_
     line_3 = '1\n'
     line_5 = '0\n'
     with open(fname,'a') as f:
-        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
+        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
                 str(ii),
                 str(idate),
                 str(iotime),
@@ -681,8 +735,9 @@ def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_
                 '%1.2e'%d_amp,
                 '%1.2f'%SNR[0],
                 '%1.2f'%SNR[1],
-                '%1.2f'%SNR[2],
                 '%1.2f'%amp_rat,
+                '%1.2f'%left_rat,
+                '%1.2f'%right_rat,
                 ))
 
 main()

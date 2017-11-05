@@ -12,7 +12,7 @@ Created By : Samuel M. Haugland
 ==============================================================================
 '''
 
-from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num,zeros,where
+from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num,zeros,where,sqrt
 from scipy.signal import argrelmax as arm
 from numpy.fft import fft,fftfreq
 from os import listdir,getcwd
@@ -31,7 +31,7 @@ def main():
                        description='Measure and record traveltime delays')
     parser.add_argument('-p','--phase',metavar='N',type=str,
                         help='Name of phase')
-    parser.add_argument('-w','--window',default=30,type=int,
+    parser.add_argument('-w','--window',default=0,type=int,
                         help='Half of the window length')
     parser.add_argument('--fmin',default=1./100,type=float,
                         help='Minimum frequency')
@@ -46,6 +46,8 @@ def main():
     parser.add_argument('--plot',dest='plot',
                         action='store_true',help='Plot waveforms')
     args = parser.parse_args()
+    if args.window == 0.:
+        args.window = 2*1./args.fmax
     fname = write_header(args.phase,args)
     #amp_fname = write_amp_header(args.phase,args.fmin,args.fmax)
     branch_list = phase_info(args.phase)
@@ -66,7 +68,7 @@ def main():
             m1,m2,update_m1,\
             update_m2,s_amp,\
             d_amp,del_t,key,\
-            SNR,amp_rat=\
+            SNR,amp_rat,left_rat,right_rat=\
             find_ttime(
             std[ii],sts[ii],[args.phase],
             (-1*args.window,args.window),args.plot,args)
@@ -87,7 +89,7 @@ def main():
                             m1,m2,
                             update_m1,update_m2,
                             s_amp,d_amp,
-                            del_t,SNR,amp_rat)
+                            del_t,SNR,amp_rat,left_rat,right_rat)
             i += 1
         else:
             print('control to keep')
@@ -146,11 +148,7 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                               distance_in_degree=data_tr.stats.gcarc,
                               phase_list=phase)[0].time
 
-    n1 = data_tr.slice(d_st+itime+d_o-200,
-                       d_st+itime+d_o-100).data
-    n2 = data_tr.slice(d_st+itime+d_o-100,
-                       d_st+itime+d_o-50).data
-    n3 = data_tr.slice(d_st+itime+d_o-(1./args.fmin),
+    n3 = data_tr.slice(d_st+itime+d_o-(2./args.fmin),
                        d_st+itime+d_o-30).data
     d = data_tr.slice(d_st+time+d_o+window_tuple[0],
                       d_st+time+d_o+window_tuple[1]).data
@@ -158,17 +156,16 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                        s_st+time+s_o+window_tuple[1]).data
 
     t = linspace(window_tuple[0],window_tuple[1],num=len(d))
-    T = (1./args.fmax)*1.5
-    SNR_1 = round((max(d)-min(d))/(max(n1)-min(n1)),2)
-    SNR_2 = round((max(d)-min(d))/(max(n2)-min(n2)),2)
-    SNR_3 = round((max(d)-min(d))/(max(n3)-min(n3)),2)
-    SNR = (SNR_1,SNR_2,SNR_3)
+    T = (1./args.fmax)*1.0
+    SNR_1 = round(max(d)/max(n3),2)
+    SNR_2 = round(max(d)/mean(sqrt(n3**2)),2)
+
+    SNR = (SNR_1,SNR_2)
     s_amp = (max(s)-min(s))
     d_amp = (max(d)-min(d))
     amp_rat = round(s_amp/d_amp,2)
     #First correlation
     del_t = npcorr(s,d,samp)
-    roll_s = roll(s,int(samp*del_t))
     mid = int(len(s)/2.)
     cs  = s[mid-int(samp*T):mid+int(samp*T)]
     cd  = d[mid+int(samp*(del_t-T)):mid+int(samp*(del_t+T))]
@@ -202,7 +199,6 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     try:
         right_rat = round(sd[arm(sd)[0][arm_max+1]][0]/max(sd),2)
         left_rat = round(sd[arm(sd)[0][arm_max-1]][0]/max(sd),2)
-        #shoulder = round(abs(sd[arm(sd)[0][arm_max+1]][0]/sd[arm(sd)[0][arm_max-1]][0]),2)
     except IndexError:
         right_rat = 0
         left_rat = 0
@@ -266,9 +262,9 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
         ax_left.set_xlabel('Time (s)')
         ax_right.set_xlabel('Time (s)')
         ax_bot.axvline(time,color='k')
-        ax_bot.axvspan(itime+synth_tr.stats.o-(1./args.fmin),itime+synth_tr.stats.o-30,color='b',alpha=0.3)
+        ax_bot.axvspan(itime+synth_tr.stats.o-(2./args.fmin),itime+synth_tr.stats.o-30,color='b',alpha=0.3)
         ax_bot.axvspan(time+synth_tr.stats.o+window_tuple[0],time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
-        ax_full.axvspan(itime+synth_tr.stats.o-(1./args.fmin),itime+synth_tr.stats.o-30,color='b',alpha=0.3)
+        ax_full.axvspan(itime+synth_tr.stats.o-(2./args.fmin),itime+synth_tr.stats.o-30,color='b',alpha=0.3)
         ax_full.axvspan(time+synth_tr.stats.o+window_tuple[0],time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
         for ii in ds_time:
             #ax_bot.axvline(ii.time,color='k')
@@ -297,8 +293,8 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
             fig.set_facecolor('limegreen')
 
         plt.figtext(0.1,0.95,'press ctrl to save')
-        plt.figtext(0.15,0.30,'M1: {}\nM2: {}\nS/D: {}\nSNR1: {}\nSNR2: {}\nSNR3: {}'\
-                    .format(m1,m2,amp_rat,SNR[0],SNR[1],SNR[2]),size=15)
+        plt.figtext(0.15,0.30,'M1: {}\nM2: {}\nS/D: {}\nSNR_max: {}\nSNR_mean: {}'\
+                    .format(m1,m2,amp_rat,SNR[0],SNR[1]),size=15)
 
         plt.figtext(0.40,0.55,'del_t: {}s\nupdate: {}s\nfinal_t: {}s\ncorr:{}\nupdate_corr: {}'\
                     .format(del_t,update_t,del_t+update_t,corcoeft[0],corcoeft[1]),size=15)
@@ -309,7 +305,7 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     else:
         key = 'control'
 
-    return tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t+update_t,key,SNR,amp_rat
+    return tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t+update_t,key,SNR,amp_rat,left_rat,right_rat
 
 def read_streams(data_pickle,synth_pickle):
     sts = obspy.read(synth_pickle)
@@ -376,9 +372,9 @@ def write_traveltime(fname,tr,tsig,tobs,corcoeft,nbt,xcl,tincore):
         f.write(line_5)
 
 def write_header(phase_name,args):
-    fmin = str(args.fmin)
-    fmax = str(args.fmax)
-    fname = getcwd().split('/')[-1]+'_'+phase_name+'.dat'
+    fname = '{}_{}_{}.dat'.format(getcwd().split('/')[-1],
+                                  phase_name,
+                                  round(1./args.fmax))
     with open(fname,'w') as f:
         f.write(fname+'\n')
         f.write('None\n')
@@ -407,6 +403,7 @@ def phase_info(phase_name):
         branch_list = ['sSdiff','sSdiff','DONT USE','DONT USE','DONT USE']
     elif phase_name == 'Sdiff':
         branch_list = ['Sdiff','Sdiff','DONT USE','DONT USE','DONT USE']
+
     elif phase_name == 'S':
         branch_list = ['S','S','6371 1 2','3482 2 2','6371 5 0']
     elif phase_name == 'sS':
@@ -416,13 +413,25 @@ def phase_info(phase_name):
         branch_list = ['ScS','ScS','6371 1 2','3482 3 2','6371 5 0']
     elif phase_name == 'ScSScS':
         branch_list = ['ScSScS','ScSScS','6371 1 2','3482 3 2','6371 3 2','3482 3 2','6371 5 0']
+    elif phase_name == 'ScSScSScS':
+        branch_list = ['ScSScSScS','ScSScSScS','6371 1 2','3482 3 2','6371 3 2','3482 3 2','6371 3 2','3482 3 2','6371 5 0']
 
     elif phase_name == 'SS':
-        branch_list = ['SS','SS','6371 0 2','3482 2 2','6371 3 2','3482 2 2','6371 5 0']
+        branch_list = ['SS','SS','6371 1 2','3482 2 2','6371 3 2','3482 2 2','6371 5 0']
     elif phase_name == 'SSS':
-        branch_list = ['SSS','SSS','6371 0 2','3482 2 2','6371 3 2','3482 2 2','6371 3 2','3482 2 2','6371 5 0']
+        branch_list = ['SSS','SSS','6371 1 2','3482 2 2','6371 3 2','3482 2 2','6371 3 2','3482 2 2','6371 5 0']
+
+    elif phase_name == 'SKS':
+        branch_list = ['SKS','SKS','6371 1 2','3482 4 1','3482 4 2','6371 5 0']
+    elif phase_name == 'SKKS':
+        branch_list = ['SKS','SKS','6371 1 2','3482 4 1','3482 3 1','3482 4 2','6371 5 0']
+
     elif phase_name == 'P':
-        branch_list = ['S','S','6371 1 2','3482 2 2','6371 5 0']
+        branch_list = ['P','P','6371 1 1','3482 2 1','6371 5 0']
+    elif phase_name == 'PP':
+        branch_list = ['PP','PP','6371 1 1','3482 2 1','6371 3 1','3482 2 1','6371 5 0']
+    elif phase_name == 'PPP':
+        branch_list = ['PPP','PPP','6371 1 1','3482 2 1','6371 3 1','3482 2 1','6371 3 1','3482 2 1','6371 5 0']
     else:
         print('Phase name first argument')
     return branch_list
@@ -684,15 +693,17 @@ def phase_range(std,sts,phase_name):
     return std,sts
 
 def write_amp_header(phase_name,fmin,fmax):
-    fname = getcwd().split('/')[-1]+'_'+phase_name+'_amp.dat'
+    fname = '{}_{}_{}.dat'.format(getcwd().split('/')[-1],
+                                  phase_name,
+                                  round(1./fmax))
     with open(fname,'w') as f:
         f.write(fname+'\n')
         f.write('fmin,fmax''\n')
         f.write('{} {}\n'.format(fmin,fmax))
-        f.write('idate,iotime,stat,netw,comp,slat,slon,sdep,rlat,rlon,relev,tobs,delt,corcoeft,m1,m2,s_amp,d_amp,SNR1,SNR2,SNR3,amp_rat\n')
+        f.write('idate,iotime,stat,netw,comp,slat,slon,sdep,rlat,rlon,relev,tobs,delt,corcoeft,m1,m2,s_amp,d_amp,SNR1,SNR2,amp_rat\n')
     return fname
 
-def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t,SNR,amp_rat):
+def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t,SNR,amp_rat,left_rat,right_rat):
     idate=str(tr.stats.starttime.year)[-2::]+'%03d'%tr.stats.starttime.day
     iotime='%02d%02d%02d'%(tr.stats.starttime.hour,
                            tr.stats.starttime.minute,
@@ -711,7 +722,7 @@ def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_
     line_3 = '1\n'
     line_5 = '0\n'
     with open(fname,'a') as f:
-        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
+        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
                 str(ii),
                 str(idate),
                 str(iotime),
@@ -736,8 +747,9 @@ def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_
                 '%1.2e'%d_amp,
                 '%1.2f'%SNR[0],
                 '%1.2f'%SNR[1],
-                '%1.2f'%SNR[2],
                 '%1.2f'%amp_rat,
+                '%1.2f'%left_rat,
+                '%1.2f'%right_rat,
                 ))
 
 def monochrome(tt,yy):

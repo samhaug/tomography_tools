@@ -14,48 +14,48 @@ if [ $2 == 1 ]; then
     max_date=$date-02-01
 elif [ $2 == 2 ]; then
     echo 'February'
-    min_date=$date-02-02
+    min_date=$date-02-01
     max_date=$date-03-01
 elif [ $2 == 3 ]; then
     echo 'March'
-    min_date=$date-03-02
+    min_date=$date-03-01
     max_date=$date-04-01
 elif [ $2 == 4 ]; then
     echo 'April'
-    min_date=$date-04-02
+    min_date=$date-04-01
     max_date=$date-05-01
 elif [ $2 == 5 ]; then
     echo 'May'
-    min_date=$date-05-02
+    min_date=$date-05-01
     max_date=$date-06-01
 elif [ $2 == 6 ]; then
     echo 'June'
-    min_date=$date-06-02
+    min_date=$date-06-01
     max_date=$date-07-01
 elif [ $2 == 7 ]; then
     echo 'July'
-    min_date=$date-07-02
+    min_date=$date-07-01
     max_date=$date-08-01
 elif [ $2 == 8 ]; then
     echo 'August'
-    min_date=$date-08-02
+    min_date=$date-08-01
     max_date=$date-09-01
 elif [ $2 == 9 ]; then
     echo 'September'
-    min_date=$date-09-02
+    min_date=$date-09-01
     max_date=$date-10-01
 elif [ $2 == 10 ]; then
     echo 'October'
-    min_date=$date-10-02
+    min_date=$date-10-01
     max_date=$date-11-01
 elif [ $2 == 11 ]; then
     echo 'November'
-    min_date=$date-11-02
+    min_date=$date-11-01
     max_date=$date-12-01
 elif [ $2 == 12 ]; then
     echo 'December'
-    min_date=$date-12-02
-    min_date=$date-12-31
+    min_date=$date-12-01
+    max_date=$date-12-31
     #max_date=$(($date+1))-01-01
 fi
 
@@ -95,9 +95,9 @@ MY_CMD="~/anaconda2/bin/obspyDMT
 --event_based 
 --instrument_correction
 --req_parallel 
---req_np 8
+--req_np 12
 --parallel_process 
---process_np 8
+--process_np 12
 --syngine 
 --syngine_bg_model iasp91_2s"
 
@@ -107,7 +107,7 @@ echo "#PBS -A seismoproject_fluxod"                >>"$datapath"_submit.pbs
 echo "#PBS -q fluxod"                    >>"$datapath"_submit.pbs
 echo "#PBS -l qos=flux"                >>"$datapath"_submit.pbs
 echo "#PBS -N $datapath"               >>"$datapath"_submit.pbs
-echo "#PBS -l nodes=1:ppn=1,pmem=4gb,walltime=200:00:00">>"$datapath"_submit.pbs
+echo "#PBS -l nodes=1:ppn=1,pmem=8gb,walltime=200:00:00">>"$datapath"_submit.pbs
 echo "#PBS -d ."                       >>"$datapath"_submit.pbs
 echo "#PBS -m n"                       >>"$datapath"_submit.pbs
 echo "#PBS -V"                         >>"$datapath"_submit.pbs

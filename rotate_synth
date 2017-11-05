@@ -29,9 +29,9 @@ def main():
     stt = obspy.core.Stream()
     str = obspy.core.Stream()
     for ii in range(0,i):
-        name = ste[ii].stats.station+ste[ii].stats.network
+        name = ste[ii].stats.station+ste[ii].stats.network+ste[ii].stats.location
         for tr in stn:
-            if tr.stats.station+tr.stats.network == name:
+            if tr.stats.station+tr.stats.network+tr.stats.location == name:
                 trt = tr.copy()
                 trr = tr.copy()
                 trt.stats.channel = 'BHT'

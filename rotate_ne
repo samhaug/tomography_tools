@@ -1,0 +1,99 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : rotate_ne
+Purpose : rotate BH1,BH2 to BHN,BHE. Save as SAC in processed directory
+Creation Date : 14-08-2017
+Last Modified : Mon 14 Aug 2017 01:57:02 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+import numpy as np
+from subprocess import call
+import os
+import obspy
+from sys import argv
+from glob import glob
+from matplotlib import pyplot as plt
+
+def main():
+    a1 = []
+    a2 = []
+    st1 = obspy.read('processed/*BH1')
+    st2 = obspy.read('processed/*BH2')
+    new_st1 = obspy.core.Stream()
+    new_st2 = obspy.core.Stream()
+
+    for tr in st1:
+        a1.append(tr.stats.station+tr.stats.network+tr.stats.location)
+    for tr in st2:
+        a2.append(tr.stats.station+tr.stats.network+tr.stats.location)
+    i = set(a1).intersection(set(a2))
+    for tr in st1:
+        if tr.stats.station+tr.stats.network+tr.stats.location not in i:
+            st1.remove(tr)
+    for tr in st2:
+        if tr.stats.station+tr.stats.network+tr.stats.location not in i:
+            st2.remove(tr)
+    st1.sort(['station'])
+    st2.sort(['station'])
+
+    for idx,tr in enumerate(st1):
+        if st1[idx].stats.npts == st2[idx].stats.npts:
+            new_st1.append(st1[idx])
+            new_st2.append(st2[idx])
+        elif np.abs(st1[idx].stats.npts-st2[idx].stats.npts) == 1:
+            chop = min(st1[idx].stats.npts,st2[idx].stats.npts)
+            st1[idx].data = st1[idx].data[0:chop]
+            st2[idx].data = st2[idx].data[0:chop]
+            new_st1.append(st1[idx])
+            new_st2.append(st2[idx])
+        else:
+            continue
+
+    print len(new_st1)
+    print len(new_st2)
+
+    for idx,tr in enumerate(new_st1):
+        cmpaz = tr.stats.sac['cmpaz']
+        trn = new_st1[idx].copy()
+        trn.stats.channel = 'BHN'
+        #trn.stats.calib = 'BH1'
+        trn.stats.calib = 4.0
+        tre = new_st2[idx].copy()
+        tre.stats.channel = 'BHE'
+        #tre.stats.calib = 'BH2'
+        n = np.cos(np.radians(cmpaz))*new_st1[idx].data+np.sin(np.radians(cmpaz))*new_st1[idx].data
+        e = -np.sin(np.radians(cmpaz))*new_st2[idx].data+np.cos(np.radians(cmpaz))*new_st2[idx].data
+        tre.data = e
+        trn.data = n
+        tre.write('processed/{}.{}.{}.{}'.format(
+                   tre.stats.network,
+                   tre.stats.station,
+                   tre.stats.location,
+                   tre.stats.channel),format='SAC')
+        trn.write('processed/{}.{}.{}.{}'.format(
+                   trn.stats.network,
+                   trn.stats.station,
+                   trn.stats.location,
+                   trn.stats.channel),format='SAC')
+
+main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
