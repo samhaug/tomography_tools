@@ -26,11 +26,14 @@ import time
 model = TauPyModel(model='iasp91')
 
 
+
 def main():
     parser = argparse.ArgumentParser(
                        description='Measure and record traveltime delays')
     parser.add_argument('-p','--phase',metavar='N',type=str,
                         help='Name of phase')
+    parser.add_argument('-f','--fname',metavar='N',type=str,default=False,
+                        help='Name of accepted file (optional)')
     parser.add_argument('-w','--window',default=0,type=int,
                         help='Half of the window length')
     parser.add_argument('--fmin',default=1./100,type=float,
@@ -46,6 +49,8 @@ def main():
     parser.add_argument('--plot',dest='plot',
                         action='store_true',help='Plot waveforms')
     args = parser.parse_args()
+
+
     if args.window == 0.:
         args.window = 2*1./args.fmax
     fname = write_header(args.phase,args)
@@ -59,10 +64,16 @@ def main():
     std.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
     sts.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
     now = time.time()
+
+    if args.fname != False:
+        st_id = display_id(args)
+    elif not args.fname:
+        st_id = range(0,len(std),args.stride)
+
     i = 0
-    for idx,ii in enumerate(range(0,len(std),args.stride)):
-        total = len(range(0,len(std),args.stride))
-        print '{}%'.format(round(float(idx)/total*100.))
+    for idx,ii in enumerate(st_id):
+        total = len(st_id)
+        print ii,'{}%'.format(round(float(idx)/total*100.))
         try:
             tobs,corcoeft,\
             m1,m2,update_m1,\
@@ -74,15 +85,15 @@ def main():
             (-1*args.window,args.window),args.plot,args)
         except ValueError:
             continue
+        if nan_to_num(min(SNR)) < 1.5 or nan_to_num(max(corcoeft)) < 0.75 or nan_to_num(amp_rat) < 0.14:
+            continue
+        if nan_to_num(max(SNR)) > 15000 or nan_to_num(max(corcoeft)) > 1.5 or nan_to_num(amp_rat) > 7:
+            continue
         if key == 'escape':
             break
         if key == 'alt':
             continue
-        if nan_to_num(min(SNR)) < 1.5 or nan_to_num(corcoeft[1]) < 0.75 or nan_to_num(amp_rat) < 0.14:
-            continue
-        if nan_to_num(max(SNR)) > 15000 or nan_to_num(corcoeft[1]) > 1.5 or nan_to_num(amp_rat) > 7:
-            continue
-        if key == 'control':
+        elif key == 'control':
             #write_traveltime(fname,std[ii],1.0,tobs,corcoeft,1.0,args.window,0)
             write_amplitude(fname,ii,std[ii],
                             tobs,corcoeft,
@@ -102,6 +113,16 @@ def main():
     print 'Your rate: {} traces/sec\n'.format(rate)
     print '{} Proposed picks\n'.format(idx)
     print '{} Accepted picks\n'.format(i)
+
+def display_id(args):
+    f = open(args.fname,'r').readlines()
+    st_id = []
+    for ii in f:
+        if len(ii.strip().split()) < 5:
+            continue
+        else:
+            st_id.append(int(ii.strip().split()[0]))
+    return st_id
 
 def welcome_message(args,st):
     print('#######################################')
@@ -262,7 +283,8 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
         ax_left.set_xlabel('Time (s)')
         ax_right.set_xlabel('Time (s)')
         ax_bot.axvline(time,color='k')
-        ax_bot.axvspan(itime+synth_tr.stats.o-(2./args.fmin),itime+synth_tr.stats.o-30,color='b',alpha=0.3)
+        #ax_bot.axvspan(itime+synth_tr.stats.o-(2./args.fmin),itime+synth_tr.stats.o-30,color='b',alpha=0.3)
+        ax_bot.axvspan(d_st+itime+d_o-(2./args.fmin),d_st+itime+d_o-30,color='b',alpha=0.3)
         ax_bot.axvspan(time+synth_tr.stats.o+window_tuple[0],time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
         ax_full.axvspan(itime+synth_tr.stats.o-(2./args.fmin),itime+synth_tr.stats.o-30,color='b',alpha=0.3)
         ax_full.axvspan(time+synth_tr.stats.o+window_tuple[0],time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
@@ -372,7 +394,12 @@ def write_traveltime(fname,tr,tsig,tobs,corcoeft,nbt,xcl,tincore):
         f.write(line_5)
 
 def write_header(phase_name,args):
-    fname = '{}_{}_{}.dat'.format(getcwd().split('/')[-1],
+    if not args.fname:
+        fname = '{}_{}_{}.dat'.format(getcwd().split('/')[-1],
+                                  phase_name,
+                                  round(1./args.fmax))
+    elif args.fname != False:
+        fname = '{}_{}_{}.rev'.format(getcwd().split('/')[-1],
                                   phase_name,
                                   round(1./args.fmax))
     with open(fname,'w') as f:
@@ -386,7 +413,7 @@ def write_f_resp(fname,fmin,fmax):
     b,a = butter(4,(fmin,fmax),'bandpass',analog=True)
     w,h = freqs(b, a)
     w = round(w,5)
-    h = abs(round(h,5))
+    h = abs(w*round(h,5))
     freq_resp = hstack((transpose([w]),transpose([h])))
     with open(fname,'a') as f:
         f.write('1\n')

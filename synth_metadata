@@ -13,12 +13,16 @@ Created By : Samuel M. Haugland
 '''
 
 import obspy
+from numpy import abs,where
+from scipy import signal
 from glob import glob
 import os
 
 def main():
     std_Z = obspy.read('st_Z.h5')
+    tri = find_stf(std_Z[0])
     sts_Z = obspy.core.Stream()
+
     for tr in std_Z:
         try:
             st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
@@ -36,6 +40,10 @@ def main():
             st[0].stats.evdp = tr.stats.evdp
             st[0].stats.stel = tr.stats.stel
             st[0].stats.mag = tr.stats.mag
+            conv = signal.convolve(st[0].data,signal.triang(st[0].stats.sampling_rate*tri),mode='same')
+            conv *= st[0].data.max()/conv.max()
+            st[0].data = conv
+
             sts_Z.append(st[0])
         except IOError:
             continue
@@ -61,6 +69,9 @@ def main():
             st[0].stats.evdp = tr.stats.evdp
             st[0].stats.stel = tr.stats.stel
             st[0].stats.mag = tr.stats.mag
+            conv = signal.convolve(st[0].data,signal.triang(st[0].stats.sampling_rate*tri),mode='same')
+            conv *= st[0].data.max()/conv.max()
+            st[0].data = conv
             sts_E.append(st[0])
         except IOError:
             continue
@@ -85,10 +96,34 @@ def main():
             st[0].stats.evdp = tr.stats.evdp
             st[0].stats.stel = tr.stats.stel
             st[0].stats.mag = tr.stats.mag
+            conv = signal.convolve(st[0].data,signal.triang(st[0].stats.sampling_rate*tri),mode='same')
+            conv *= st[0].data.max()/conv.max()
+            st[0].data = conv
             sts_N.append(st[0])
         except IOError:
             continue
     sts_E.write('sts_E.h5',format='H5')
     sts_N.write('sts_N.h5',format='H5')
-main()
 
+def find_stf(tr):
+    f = open('../EVENTS-INFO/catalog.txt','r').readlines()
+    l = []
+    for idx,ii in enumerate(f):
+        if ii.startswith('#'):
+            l.append(idx)
+    c = [ii.strip().split(',') for ii in f[max(l)+1::]]
+    t = []
+    for idx,ii in enumerate(c):
+        try:
+            t.append(abs(tr.stats.starttime-obspy.core.UTCDateTime(ii[2])))
+        except IndexError:
+            t.append(1e30)
+
+    i = t.index(min(t))
+    stf = float(c[i][17])
+    return stf
+
+
+
+
+main()
