@@ -15,8 +15,13 @@ Created By : Samuel M. Haugland
 import obspy
 from glob import glob
 import os
+import argparse
 
 def main():
+    parser = argparse.ArgumentParser(
+                       description='make data_h5')
+    parser.add_argument('-c','--component',metavar='N',type=str,
+                        help='Name of phase')
     a = open('info/station_event')
     b = a.readlines(1)[0].split(',')[9]
     year = int(b[0:4])
@@ -26,12 +31,15 @@ def main():
     minute = int(b[11:13])
     second = int(b[13:15])
     ev_time = obspy.core.UTCDateTime(year,month,day,hour,minute,second)
-    st_Z = meta_data('processed/*HZ',ev_time)
-    st_Z.write('st_Z.h5',format='H5')
-    st_E = meta_data('processed/*HE',ev_time)
-    st_E.write('st_E.h5',format='H5')
-    st_N = meta_data('processed/*HN',ev_time)
-    st_N.write('st_N.h5',format='H5')
+    if parser.component == 'Z':
+        st_Z = meta_data('processed/*HZ',ev_time)
+        st_Z.write('st_Z.h5',format='H5')
+    if parser.component == 'E':
+        st_E = meta_data('processed/*HE',ev_time)
+        st_E.write('st_E.h5',format='H5')
+    if parser.component == 'N':
+        st_N = meta_data('processed/*HN',ev_time)
+        st_N.write('st_N.h5',format='H5')
 
 def meta_data(stream,ev_time):
     f = 0.0033528106647474805

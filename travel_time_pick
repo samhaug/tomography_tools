@@ -12,7 +12,7 @@ Created By : Samuel M. Haugland
 ==============================================================================
 '''
 
-from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num,zeros,where,sqrt
+from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num,zeros,where,sqrt,sum
 from scipy.signal import argrelmax as arm
 from numpy.fft import fft,fftfreq
 from os import listdir,getcwd
@@ -79,13 +79,13 @@ def main():
             m1,m2,update_m1,\
             update_m2,s_amp,\
             d_amp,del_t,key,\
-            SNR,amp_rat,left_rat,right_rat=\
+            SNR,amp_rat,left_rat,right_rat,lsq=\
             find_ttime(
             std[ii],sts[ii],[args.phase],
             (-1*args.window,args.window),args.plot,args)
         except ValueError:
             continue
-        if nan_to_num(min(SNR)) < 1.5 or nan_to_num(max(corcoeft)) < 0.75 or nan_to_num(amp_rat) < 0.14:
+        if nan_to_num(SNR[1]) < 8.0 or nan_to_num(max(corcoeft)) < 0.75 or nan_to_num(amp_rat) < 0.14:
             continue
         if nan_to_num(max(SNR)) > 15000 or nan_to_num(max(corcoeft)) > 1.5 or nan_to_num(amp_rat) > 7:
             continue
@@ -94,13 +94,12 @@ def main():
         if key == 'alt':
             continue
         elif key == 'control':
-            #write_traveltime(fname,std[ii],1.0,tobs,corcoeft,1.0,args.window,0)
             write_amplitude(fname,ii,std[ii],
                             tobs,corcoeft,
                             m1,m2,
                             update_m1,update_m2,
                             s_amp,d_amp,
-                            del_t,SNR,amp_rat,left_rat,right_rat)
+                            del_t,SNR,amp_rat,left_rat,right_rat,lsq)
             i += 1
         else:
             print('control to keep')
@@ -176,8 +175,12 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     s = synth_tr.slice(s_st+time+s_o+window_tuple[0],
                        s_st+time+s_o+window_tuple[1]).data
 
+    dx = min(len(d),len(s))
+    d = d[0:dx]
+    s = s[0:dx]
+
     t = linspace(window_tuple[0],window_tuple[1],num=len(d))
-    T = (1./args.fmax)*1.0
+    T = (1./args.fmax)*1.5
     SNR_1 = round(max(d)/max(n3),2)
     SNR_2 = round(max(d)/mean(sqrt(n3**2)),2)
 
@@ -190,16 +193,26 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     mid = int(len(s)/2.)
     cs  = s[mid-int(samp*T):mid+int(samp*T)]
     cd  = d[mid+int(samp*(del_t-T)):mid+int(samp*(del_t+T))]
+    cx = min(len(cs),len(cd))
+    cs = cs[0:cx]
+    cd = cd[0:cx]
+
+    fig1,ax1 = plt.subplots()
+    sr = roll(s,int(samp*(del_t)))
+    lsq = round(sum((sr/abs(sr).max()-d/abs(d).max())**2)/abs(window_tuple[0]),2)
+    #lsq = round(sum((s-d)**2)/sum(d**2),2)
     #Second correlation
     update_t = npcorr(cs,cd,samp)
     update_cs = roll(cs,int(samp*update_t))
 
     tcs = linspace(int(-T),int(T),num=len(cs))
     tcd = linspace(int(-T),int(T),num=len(cd))
-    m1 = round(max(correlate(cd,cs))/max(correlate(cs,cs)),3)
-    m2 = round(max(correlate(cd,cd))/max(correlate(cd,cs)),3)
-    update_m1 = round(max(correlate(cd,update_cs))/max(correlate(update_cs,update_cs)),3)
-    update_m2 = round(max(correlate(cd,cd))/max(correlate(cd,update_cs)),3)
+    m1 = round(max(correlate(d,s,mode='same'))/max(correlate(s,s,mode='same')),3)
+    m2 = round(max(correlate(d,d,mode='same'))/max(correlate(d,s,mode='same')),3)
+    #update_m1 = round(max(correlate(cd,update_cs))/max(correlate(update_cs,update_cs)),3)
+    #update_m2 = round(max(correlate(cd,cd))/max(correlate(cd,update_cs)),3)
+    update_m1 = round(max(correlate(cd,cs))/max(correlate(cs,cs)),3)
+    update_m2 = round(max(correlate(cd,cd))/max(correlate(cd,cs)),3)
     corcoeft_1 = round(1-((m2-m1)/m2),3)
     corcoeft_2 = round(1-((update_m2-update_m1)/update_m2),3)
     tobs = del_t+update_t+time
@@ -210,10 +223,6 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     ss_imax = argmax(ss)
     arm_max = where(arm(ss)[0] == ss_imax)[0]
     #print max(ss),ss[arm(ss)[0][arm_max+1]][0]
-    try:
-        s_cor_rat = max(ss)/ss[arm(ss)[0][arm_max+1]][0]
-    except IndexError:
-        s_cor_rat = 0
 
     sd_imax = argmax(sd)
     arm_max = where(arm(sd)[0] == sd_imax)[0]
@@ -315,19 +324,19 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
             fig.set_facecolor('limegreen')
 
         plt.figtext(0.1,0.95,'press ctrl to save')
-        plt.figtext(0.15,0.30,'M1: {}\nM2: {}\nS/D: {}\nSNR_max: {}\nSNR_mean: {}'\
-                    .format(m1,m2,amp_rat,SNR[0],SNR[1]),size=15)
+        plt.figtext(0.15,0.30,'M1: {}\nM2: {}\nS/D: {}\nSNR_max: {}\nSNR_mean: {}\nLSQ: {}'\
+                    .format(m1,m2,amp_rat,SNR[0],SNR[1],lsq),size=15)
 
         plt.figtext(0.40,0.55,'del_t: {}s\nupdate: {}s\nfinal_t: {}s\ncorr:{}\nupdate_corr: {}'\
                     .format(del_t,update_t,del_t+update_t,corcoeft[0],corcoeft[1]),size=15)
-        plt.figtext(0.51,0.51,'R_rat: {}\nL_rat: {}\n'\
+        plt.figtext(0.54,0.51,'R_rat: {}\nL_rat: {}\n'\
                     .format(right_rat,left_rat),size=15)
         plt.show()
         key = clicks.key
     else:
         key = 'control'
 
-    return tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t+update_t,key,SNR,amp_rat,left_rat,right_rat
+    return tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t+update_t,key,SNR,amp_rat,left_rat,right_rat,lsq
 
 def read_streams(data_pickle,synth_pickle):
     sts = obspy.read(synth_pickle)
@@ -730,7 +739,7 @@ def write_amp_header(phase_name,fmin,fmax):
         f.write('idate,iotime,stat,netw,comp,slat,slon,sdep,rlat,rlon,relev,tobs,delt,corcoeft,m1,m2,s_amp,d_amp,SNR1,SNR2,amp_rat\n')
     return fname
 
-def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t,SNR,amp_rat,left_rat,right_rat):
+def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t,SNR,amp_rat,left_rat,right_rat,lsq):
     idate=str(tr.stats.starttime.year)[-2::]+'%03d'%tr.stats.starttime.day
     iotime='%02d%02d%02d'%(tr.stats.starttime.hour,
                            tr.stats.starttime.minute,
@@ -749,7 +758,7 @@ def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_
     line_3 = '1\n'
     line_5 = '0\n'
     with open(fname,'a') as f:
-        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
+        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
                 str(ii),
                 str(idate),
                 str(iotime),
@@ -777,6 +786,7 @@ def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_
                 '%1.2f'%amp_rat,
                 '%1.2f'%left_rat,
                 '%1.2f'%right_rat,
+                '%1.2f'%lsq,
                 ))
 
 def monochrome(tt,yy):
