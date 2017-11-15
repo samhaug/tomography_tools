@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo 'rotate_ne'
+rotate_ne
 echo 'data_metadata'
 data_metadata
 echo 'synth_metadata'

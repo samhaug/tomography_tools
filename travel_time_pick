@@ -25,8 +25,6 @@ from obspy.taup import TauPyModel
 import time
 model = TauPyModel(model='iasp91')
 
-
-
 def main():
     parser = argparse.ArgumentParser(
                        description='Measure and record traveltime delays')
@@ -85,9 +83,11 @@ def main():
             (-1*args.window,args.window),args.plot,args)
         except ValueError:
             continue
-        if nan_to_num(SNR[1]) < 8.0 or nan_to_num(max(corcoeft)) < 0.75 or nan_to_num(amp_rat) < 0.14:
+        if nan_to_num(amp_rat) < 0.14 or nan_to_num(amp_rat) > 7:
             continue
-        if nan_to_num(max(SNR)) > 15000 or nan_to_num(max(corcoeft)) > 1.5 or nan_to_num(amp_rat) > 7:
+        if nan_to_num(SNR[1]) < 8.0 or nan_to_num(SNR[1]) < 15000:
+            continue
+        if nan_to_num(max(corcoeft)) < 0.75:
             continue
         if key == 'escape':
             break
@@ -155,11 +155,15 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     s_st = synth_tr.stats.starttime
     s_et = synth_tr.stats.endtime
 
-    if phase[0].startswith('S'):
+    if phase[0] == 'SKS' or phase[0] == 'SKKS':
+        itime = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
+                              distance_in_degree=data_tr.stats.gcarc,
+                              phase_list=['ttp'])[0].time
+    elif phase[0].startswith('S') or phase[0] == 'sS':
         itime = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
                               distance_in_degree=data_tr.stats.gcarc,
                               phase_list=['tts'])[0].time
-    if phase[0] == 'P':
+    elif phase[0] == 'P':
         itime = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
                               distance_in_degree=data_tr.stats.gcarc,
                               phase_list=['ttp'])[0].time
@@ -185,22 +189,21 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     SNR_2 = round(max(d)/mean(sqrt(n3**2)),2)
 
     SNR = (SNR_1,SNR_2)
-    s_amp = (max(s)-min(s))
-    d_amp = (max(d)-min(d))
-    amp_rat = round(s_amp/d_amp,2)
     #First correlation
     del_t = npcorr(s,d,samp)
     mid = int(len(s)/2.)
     cs  = s[mid-int(samp*T):mid+int(samp*T)]
     cd  = d[mid+int(samp*(del_t-T)):mid+int(samp*(del_t+T))]
+    s_amp = (max(cs)-min(cs))
+    d_amp = (max(cd)-min(cd))
+    amp_rat = round(s_amp/d_amp,2)
     cx = min(len(cs),len(cd))
     cs = cs[0:cx]
     cd = cd[0:cx]
 
-    fig1,ax1 = plt.subplots()
     sr = roll(s,int(samp*(del_t)))
-    lsq = round(sum((sr/abs(sr).max()-d/abs(d).max())**2)/abs(window_tuple[0]),2)
-    #lsq = round(sum((s-d)**2)/sum(d**2),2)
+    #lsq = round(sum((sr/abs(sr).max()-d/abs(d).max())**2)/abs(window_tuple[0]),2)
+    lsq = 1-round(sum((sr/max(abs(sr))-d/max(abs(d)))**2)/sum((d/max(abs(d)))**2),2)
     #Second correlation
     update_t = npcorr(cs,cd,samp)
     update_cs = roll(cs,int(samp*update_t))
@@ -234,10 +237,10 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
         left_rat = 0
 
     if plot == True:
-        if phase[0].startswith('S'):
+        if phase[0].startswith('S') or phase[0].startswith('sS'):
             ds_time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
                               distance_in_degree=data_tr.stats.gcarc,
-                              phase_list=['S','SS','SSS','SKS','SKKS','sS'])
+                              phase_list=['S','SS','SSS','SKS','SKKS','sS','ScS','sScS','ScSScS','sScSScS'])
             dp_time = 0
         if phase[0] == 'P':
             dp_time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
@@ -278,11 +281,11 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
         ax_full.set_xlim(0,int(synth_tr.stats.npts/synth_tr.stats.sampling_rate))
         ax_bot.set_xlim(time+synth_tr.stats.o-400,time+synth_tr.stats.o+400)
         ax_bot.set_ylim(data_tr.data.min()*1.4,data_tr.data.max()*1.4)
-        ax_right.plot(tcs,cs,color='r')
-        ax_right.plot(tcs,update_cs,color='r',ls='--')
-        ax_right.plot(tcd,cd,color='k')
-        ax_right.plot(tcs,roll(update_cs,int(samp*(1))),color='b',ls='--',alpha=0.3)
-        ax_right.plot(tcs,roll(update_cs,int(samp*(-1))),color='g',ls='--',alpha=0.3)
+        ax_right.plot(tcs,cs/max(abs(cs)),color='r')
+        ax_right.plot(tcs,update_cs/max(abs(update_cs)),color='r',ls='--')
+        ax_right.plot(tcd,cd/max(abs(cd)),color='k')
+        ax_right.plot(tcs,roll(update_cs/max(abs(update_cs)),int(samp*(1))),color='b',ls='--',alpha=0.3)
+        ax_right.plot(tcs,roll(update_cs/max(abs(update_cs)),int(samp*(-1))),color='g',ls='--',alpha=0.3)
 
         ax_left.plot(t,d,color='k')
         ax_left.plot(t,s,color='r')
@@ -752,13 +755,14 @@ def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_
     sdep=round(tr.stats.evdp,2)
     rlat=round(tr.stats.stla,2)
     rlon=round(tr.stats.stlo,2)
+    gcarc = round(tr.stats.gcarc,2)
     relev=0.0
     #number of polar crossings
     line_2 = '1 0 00\n'
     line_3 = '1\n'
     line_5 = '0\n'
     with open(fname,'a') as f:
-        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
+        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
                 str(ii),
                 str(idate),
                 str(iotime),
@@ -787,6 +791,7 @@ def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_
                 '%1.2f'%left_rat,
                 '%1.2f'%right_rat,
                 '%1.2f'%lsq,
+                '%1.2f'%gcarc,
                 ))
 
 def monochrome(tt,yy):

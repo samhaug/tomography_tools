@@ -1,0 +1,266 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : write_rdt
+Purpose : write output of travel_time_pick to raydyntrace input
+Creation Date : 12-09-2017
+Last Modified : Wed 27 Sep 2017 04:18:24 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num,zeros,where,sqrt,sum
+from scipy.signal import argrelmax as arm
+from numpy.fft import fft,fftfreq
+from os import listdir,getcwd
+from matplotlib import pyplot as plt
+import matplotlib.gridspec as gridspec
+import obspy
+from scipy.signal import correlate,butter,freqs
+import argparse
+from obspy.taup import TauPyModel
+import time
+model = TauPyModel(model='iasp91')
+
+def main():
+    parser = argparse.ArgumentParser(
+                       description='filter and write to raydyntrace')
+    parser.add_argument('-lsq','--lsq',default=0.75,type=float,
+                        help='least squares cutoff')
+    parser.add_argument('-cor','--cor',default=0.75,type=float,
+                        help='correleation coeficcient cutoff')
+    parser.add_argument('-sd','--sd',default=7.,type=float,
+                        help='maximum signal to data ratio')
+    parser.add_argument('-snrmean','--snrmean',default=8.,type=float,
+                        help='minimum mean signal to noise')
+    parser.add_argument('-snrmax','--snrmax',default=12.,type=float,
+                        help='minimum max signal to noise')
+    parser.add_argument('-ph','--phase',type=str,
+                        help='phase_window')
+    parser.add_argument('-cutoff','--cutoff',default=10.,type=float,
+                        help='Window in which no other phase can interfere')
+    parser.add_argument('-f','--fname',type=str,
+                        help='travel_time_pick output file')
+    args = parser.parse_args()
+
+    header,data = read_pickfile(args.fname)
+    for pick in data:
+
+def filter(pick,args,phase):
+    a = pick.strip().split()
+    idate = a[1]
+    iotime = a[2]
+    stationcode = a[3]
+    netw =  a[4]
+    comp = a[5]
+    slat = a[6]
+    slon = a[7]
+    sdep = a[8]
+    rlat = a[9]
+    rlon = a[10]
+    relev = a[11]
+    tobs = a[12]
+    del_t = a[13]
+    corcoeft_0 = a[14]
+    corcoeft_1 = a[15]
+    m1 = a[16]
+    m2 = a[17]
+    update_m1 = a[18]
+    update_m2 = a[19]
+    s_amp = a[20]
+    d_amp = a[21]
+    SNR_max = a[22]
+    SNR_mean = a[23]
+    amp_rat = a[24]
+    left_rat = a[25]
+    right_rat = a[26]
+    lsq = a[27]
+    gcarc = a[28]
+    if float(lsq) < args.lsq:
+        return False
+    elif float(corcoeft_1) < args.cor:
+        return False
+    elif float(amp_rat) > args.sd or float(amp_rat) < 1./args.sd:
+        return False
+    elif float(SNR_max) < args.snrmax:
+        return False
+    elif float(SNR_mean) < args.snrmean:
+        return False
+    if not find_interfere(sdep,gcarc,args.phase,comp[-1],args.cutoff):
+        return False
+    else:
+        return True
+
+def find_interfere(h,deg,phase,component,cutoff):
+    if component == 'T':
+        phase_list=['S','sS','SS','sSS','SSS','sSSS',
+                    'SKS','sSKS','SKKS','sSKKS',
+                    'ScS','sScS','ScSScS','sScSScS']
+        phase_list.remove(phase)
+        arr = model.get_travel_times(depth_in_km=h,distance_in_degree=deg,
+                                     phase_list=phase_list)
+        phase_time = model.get_travel_times(depth_in_km=h,distance_in_degree=deg,
+                                     phase_list=[phase])[0].time
+        for ii in arr:
+            if abs(phase_time-ii.time) < cutoff:
+                print 'Interferes with: ',ii.name
+                return False
+        return True
+
+    if component == 'R' or component == 'Z':
+        phase_list=['S','sS','SS','sSS','SSS','sSSS',
+                    'SKS','sSKS','SKKS','sSKKS',
+                    'ScS','sScS','ScSScS','sScSScS',
+                    'SP','PS','sSP','sPS',
+                    'P','pP','sP','pS','PcP','pPcP',
+                    'PP','pPP','sPP','PKP','SKP','PKS',
+                    'pPKP','sPKP','PKKP']
+        phase_list.remove(phase)
+        arr = model.get_travel_times(depth_in_km=h,distance_in_degree=deg,
+                                     phase_list=phase_list)
+        phase_time = model.get_travel_times(depth_in_km=h,distance_in_degree=deg,
+                                     phase_list=[phase])[0].time
+        for ii in arr:
+            if abs(phase_time-ii.time) < cutoff:
+                print 'Interferes with: ',ii.name
+                return False
+        return True
+
+def welcome_message(args,st):
+    print('#######################################')
+    print('Computing and recording traveltime delays')
+    print('#######################################')
+    print 'Data file: ',args.data
+    print 'Synthetic file: ',args.synth
+    print 'Number of traces: ',len(st)
+    print 'Measuring delay of phase ',args.phase
+    print 'Event depth: {}km'.format(str(st[0].stats.evdp))
+    print 'Phase window is {} seconds long'.format(2*args.window)
+    print 'Butterworth filter from {} Hz to {} Hz'.format(args.fmin,args.fmax)
+    print 'Using every {} traces'.format(args.stride)
+    if args.plot:
+        print('Plotting is on')
+    if args.plot != True:
+        print('Plotting is off')
+    print('#######################################')
+
+def write_traveltime(fname,tr,tsig,tobs,corcoeft,nbt,xcl,tincore):
+    idate=str(tr.stats.starttime.year)[-2::]+'%03d'%tr.stats.starttime.day
+    iotime='%02d%02d%02d'%(tr.stats.starttime.hour,
+                           tr.stats.starttime.minute,
+                           tr.stats.starttime.second)
+    ievt='1'
+    kluster='0'
+    stationcode=tr.stats.station
+    netw=tr.stats.network
+    comp=tr.stats.channel
+    slat=round(tr.stats.evla,2)
+    slon=round(tr.stats.evlo,2)
+    sdep=round(tr.stats.evdp,2)
+    rlat=round(tr.stats.stla,2)
+    rlon=round(tr.stats.stlo,2)
+    relev=0.0
+    nobst=1
+    nobsa=0
+    #number of polar crossings
+    kpole=0
+    line_2 = '1 0 00\n'
+    line_3 = '1\n'
+    line_5 = '0\n'
+    with open(fname,'a') as f:
+        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
+                str(idate),
+                str(iotime),
+                str(ievt),
+                str(kluster),
+                stationcode,
+                netw,
+                comp,
+                str(slat),
+                str(slon),
+                str(sdep),
+                str(rlat),
+                str(rlon),
+                str(relev),
+                str(nobst),
+                str(nobsa),
+                str(kpole),
+                ))
+        f.write(line_2)
+        f.write(line_3)
+        f.write('{} {} {} {} {} {}\n'.format(
+                 str(tobs),
+                 str(tsig),
+                 str(corcoeft[1]),
+                 str(int(nbt)),
+                 str(2.*xcl),
+                 str(int(tincore))))
+        f.write(line_5)
+
+def read_pickfile(fname):
+    f = open(fname,'r').readlines()
+    header = []
+    data = []
+    for ii in f:
+        if len(ii.split()) < 5:
+            header.append(ii)
+        elif len(ii.split()) > 5:
+            data.append(ii)
+    return header,data
+
+def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t,SNR,amp_rat,left_rat,right_rat,lsq):
+    idate=str(tr.stats.starttime.year)[-2::]+'%03d'%tr.stats.starttime.day
+    iotime='%02d%02d%02d'%(tr.stats.starttime.hour,
+                           tr.stats.starttime.minute,
+                           tr.stats.starttime.second)
+    stationcode=tr.stats.station
+    netw=tr.stats.network
+    comp=tr.stats.channel
+    slat=round(tr.stats.evla,2)
+    slon=round(tr.stats.evlo,2)
+    sdep=round(tr.stats.evdp,2)
+    rlat=round(tr.stats.stla,2)
+    rlon=round(tr.stats.stlo,2)
+    relev=0.0
+    #number of polar crossings
+    line_2 = '1 0 00\n'
+    line_3 = '1\n'
+    line_5 = '0\n'
+    with open(fname,'a') as f:
+        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
+                str(ii),
+                str(idate),
+                str(iotime),
+                '%5s'%stationcode,
+                '%3s'%netw,
+                '%3s'%comp,
+                '%1.2f'%slat,
+                '%1.2f'%slon,
+                '%1.1f'%sdep,
+                '%1.1f'%rlat,
+                '%1.1f'%rlon,
+                '%1.2f'%relev,
+                '%1.1f'%tobs,
+                '%1.1f'%del_t,
+                '%1.3f'%corcoeft[0],
+                '%1.3f'%corcoeft[1],
+                '%1.3f'%m1,
+                '%1.3f'%m2,
+                '%1.3f'%update_m1,
+                '%1.3f'%update_m2,
+                '%1.2e'%s_amp,
+                '%1.2e'%d_amp,
+                '%1.2f'%SNR[0],
+                '%1.2f'%SNR[1],
+                '%1.2f'%amp_rat,
+                '%1.2f'%left_rat,
+                '%1.2f'%right_rat,
+                '%1.2f'%lsq,
+                ))
+
+
+main()
+

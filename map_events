@@ -19,7 +19,6 @@ from mpl_toolkits.basemap import Basemap
 
 
 def main():
-
     m = Basemap(projection='cyl')
     ax = plt.gca()
     m.drawcoastlines(linewidth=0.5)
