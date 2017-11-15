@@ -85,7 +85,7 @@ def main():
             continue
         if nan_to_num(amp_rat) < 0.14 or nan_to_num(amp_rat) > 7:
             continue
-        if nan_to_num(SNR[1]) < 8.0 or nan_to_num(SNR[1]) < 15000:
+        if nan_to_num(SNR[1]) < 8.0 or nan_to_num(SNR[1]) > 15000:
             continue
         if nan_to_num(max(corcoeft)) < 0.75:
             continue

@@ -99,10 +99,10 @@ def plot_coords(m,slat,slon,rlat,rlon,del_t):
     if abs(del_t) > 12:
         size = 70
     if del_t <= 0:
-        color = 'blue'
+        color = 'red'
         marker = 'o'
     if del_t > 0:
-        color = 'red'
+        color = 'blue'
         marker = 'x'
 
     m.scatter(lon,lat,linewidth=1,color=color,alpha=0.6,s=1.5*size,marker=marker)
