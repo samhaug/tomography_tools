@@ -47,9 +47,15 @@ def main():
     args = parser.parse_args()
 
     header,data = read_pickfile(args.fname)
+    rdt_name = write_header(args.fname,header)
     for pick in data:
+        a = pick_filter(pick,args)
+        if not a:
+            continue
+        else:
+            write_traveltime(rdt_name,a)
 
-def filter(pick,args,phase):
+def pick_filter(pick,args):
     a = pick.strip().split()
     idate = a[1]
     iotime = a[2]
@@ -89,10 +95,10 @@ def filter(pick,args,phase):
         return False
     elif float(SNR_mean) < args.snrmean:
         return False
-    if not find_interfere(sdep,gcarc,args.phase,comp[-1],args.cutoff):
-        return False
+    #if not find_interfere(sdep,gcarc,args.phase,comp[-1],args.cutoff):
+    #    return False
     else:
-        return True
+        return a
 
 def find_interfere(h,deg,phase,component,cutoff):
     if component == 'T':
@@ -147,21 +153,39 @@ def welcome_message(args,st):
         print('Plotting is off')
     print('#######################################')
 
-def write_traveltime(fname,tr,tsig,tobs,corcoeft,nbt,xcl,tincore):
-    idate=str(tr.stats.starttime.year)[-2::]+'%03d'%tr.stats.starttime.day
-    iotime='%02d%02d%02d'%(tr.stats.starttime.hour,
-                           tr.stats.starttime.minute,
-                           tr.stats.starttime.second)
+#def write_traveltime(fname,idate,iotime,stationcode,netw,comp,slat,slon,sdep,rlat,rlon,tobs,corcoeft,nbt,xcl,tincore):
+def write_traveltime(fname,a):
+    tsig=0.0
+    idate = a[1]
+    iotime = a[2]
+    stationcode = a[3]
+    netw =  a[4]
+    comp = a[5]
+    slat = a[6]
+    slon = a[7]
+    sdep = a[8]
+    rlat = a[9]
+    rlon = a[10]
+    relev = a[11]
+    tobs = a[12]
+    del_t = a[13]
+    corcoeft_0 = a[14]
+    corcoeft_1 = a[15]
+    m1 = a[16]
+    m2 = a[17]
+    update_m1 = a[18]
+    update_m2 = a[19]
+    s_amp = a[20]
+    d_amp = a[21]
+    SNR_max = a[22]
+    SNR_mean = a[23]
+    amp_rat = a[24]
+    left_rat = a[25]
+    right_rat = a[26]
+    lsq = a[27]
+    gcarc = a[28]
     ievt='1'
     kluster='0'
-    stationcode=tr.stats.station
-    netw=tr.stats.network
-    comp=tr.stats.channel
-    slat=round(tr.stats.evla,2)
-    slon=round(tr.stats.evlo,2)
-    sdep=round(tr.stats.evdp,2)
-    rlat=round(tr.stats.stla,2)
-    rlon=round(tr.stats.stlo,2)
     relev=0.0
     nobst=1
     nobsa=0
@@ -170,35 +194,29 @@ def write_traveltime(fname,tr,tsig,tobs,corcoeft,nbt,xcl,tincore):
     line_2 = '1 0 00\n'
     line_3 = '1\n'
     line_5 = '0\n'
+    nbt=1
+    xcl=1
+    tincore=1
     with open(fname,'a') as f:
         f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
-                str(idate),
-                str(iotime),
-                str(ievt),
-                str(kluster),
-                stationcode,
-                netw,
-                comp,
-                str(slat),
-                str(slon),
-                str(sdep),
-                str(rlat),
-                str(rlon),
-                str(relev),
-                str(nobst),
-                str(nobsa),
-                str(kpole),
-                ))
+                str(idate),str(iotime),str(ievt),str(kluster),str(stationcode),
+                str(netw),str(comp),str(slat),str(slon),str(sdep),str(rlat),str(rlon),
+                str(relev),str(nobst),str(nobsa),str(kpole)))
         f.write(line_2)
         f.write(line_3)
         f.write('{} {} {} {} {} {}\n'.format(
-                 str(tobs),
-                 str(tsig),
-                 str(corcoeft[1]),
-                 str(int(nbt)),
+                 str(tobs),str(tsig),
+                 str(corcoeft_1),str(int(nbt)),
                  str(2.*xcl),
                  str(int(tincore))))
         f.write(line_5)
+
+def write_header(fname,header):
+    rdt_name = fname[0:-4]+'.rdt'
+    f = open(rdt_name,'w')
+    for ii in header:
+        f.write(ii)
+    return rdt_name
 
 def read_pickfile(fname):
     f = open(fname,'r').readlines()

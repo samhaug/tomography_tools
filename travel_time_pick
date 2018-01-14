@@ -48,6 +48,7 @@ def main():
                         action='store_true',help='Plot waveforms')
     args = parser.parse_args()
 
+    std,sts = read_streams(args.data,args.synth)
 
     if args.window == 0.:
         args.window = 2*1./args.fmax
@@ -56,7 +57,6 @@ def main():
     branch_list = phase_info(args.phase)
     write_branch(fname,branch_list)
     write_f_resp(fname,args.fmin,args.fmax)
-    std,sts = read_streams(args.data,args.synth)
     welcome_message(args,std)
     std,sts = phase_range(std,sts,args.phase)
     std.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
@@ -461,7 +461,7 @@ def phase_info(phase_name):
         branch_list = ['SSS','SSS','6371 1 2','3482 2 2','6371 3 2','3482 2 2','6371 3 2','3482 2 2','6371 5 0']
 
     elif phase_name == 'SKS':
-        branch_list = ['SKS','SKS','6371 1 2','3482 4 1','3482 4 2','6371 5 0']
+        branch_list = ['SKS','SKS','6371 1 2','3482 4 1','1217 2 1','3482 4 2','6371 5 0']
     elif phase_name == 'SKKS':
         branch_list = ['SKS','SKS','6371 1 2','3482 4 1','3482 3 1','3482 4 2','6371 5 0']
 
