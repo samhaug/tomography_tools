@@ -4,7 +4,7 @@
 ==============================================================================
 
 File Name : travel_time_compute.py
-Purpose : Measure and record traveltime delays
+Purpose : Measure and record traveltime delays for all phases
 Creation Date : 12-09-2017
 Last Modified : Wed 27 Sep 2017 04:18:24 PM EDT
 Created By : Samuel M. Haugland
@@ -12,7 +12,7 @@ Created By : Samuel M. Haugland
 ==============================================================================
 '''
 
-from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num,zeros,where,sqrt,sum
+from numpy import round,argmax,max,abs,linspace,roll,pi,hstack,transpose,savetxt,mean,nan_to_num,zeros,where,sqrt,sum,array
 from scipy.signal import argrelmax as arm
 from numpy.fft import fft,fftfreq
 from os import listdir,getcwd
@@ -23,6 +23,7 @@ from scipy.signal import correlate,butter,freqs
 import argparse
 from obspy.taup import TauPyModel
 import time
+import h5py
 model = TauPyModel(model='iasp91')
 
 def main():
@@ -42,42 +43,96 @@ def main():
                         help='Path to synthetic pickle')
     parser.add_argument('--plot',dest='plot',
                         action='store_true',help='Plot waveforms')
+
+    h5f_name = getcwd().split('/')[-1]+'.h5'
+    h5f = h5py.File(h5f_name,'a',driver='core')
     args = parser.parse_args()
     std_in,sts_in = read_streams(args.data,args.synth)
+    print len(std_in)
+    print len(sts_in)
 
     if std_in[0].stats.channel.endswith('T'):
-        phase_list = ['S','S','SS','SSS','ScS','ScSScS','ScSScSScS']
-        fmax_list = [1./10,1./25,1./20,1./30,1./10,1./20,1./20]
+        phase_list = ['S','S','S','S','SS','SSS',
+                      'ScS','ScSScS','ScSScSScS',
+                      'Sdiff','Sdiff']
+        fmax_list = [1./5,1./10,1./20,1./40,1./20,1./30,
+                     1./10,1./15,1./20,
+                     1./15,1./30]
+        group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
+                      range(len(phase_list))]
+
         if std_in[0].stats.evdp > 300:
             phase_list.append('sS')
-            fmax_list.append(1./10)
+            fmax_list.append(1./15)
+        fmin_list = [1./120]*len(phase_list)
+        w_list = [1.5/i for i in fmax_list]
+
+    elif std_in[0].stats.channel.endswith('R'):
+        phase_list = ['SKS','SKKS']
+        fmax_list = [1./15,1./15]
+        group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
+                      range(len(phase_list))]
+        fmin_list = [1./120]*len(phase_list)
+        w_list = [1.5/i for i in fmax_list]
+
+    elif std_in[0].stats.channel.endswith('Z'):
+        phase_list = ['P','P','P','P',
+                      'PP','PP','PP']
+        fmax_list = [1./5,1./10,1./20,1./40,
+                     1./10,1./20,1./40]
+        group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
+                      range(len(phase_list))]
         fmin_list = [1./120]*len(phase_list)
         w_list = [1.5/i for i in fmax_list]
 
     for jdx in range(len(phase_list)):
         print 'Working on phase: '+phase_list[jdx]
+        #make h5f group
+        print group_name[jdx]
+        h5f.create_group(group_name[jdx])
         std = std_in.copy()
         sts = sts_in.copy()
         args.window = w_list[jdx]
         args.phase = phase_list[jdx]
         args.fmin = fmin_list[jdx]
         args.fmax = fmax_list[jdx]
-        #if args.window == 0.:
-        #   args.window = 2*1./args.fmax
         fname = write_header(args.phase,args)
-        #amp_fname = write_amp_header(args.phase,args.fmin,args.fmax)
         branch_list = phase_info(args.phase)
         write_branch(fname,branch_list)
-        write_f_resp(fname,args.fmin,args.fmax)
+        freq_resp = write_f_resp(fname,args.fmin,args.fmax)
+        #write_freqency to h5file
+        h5f[group_name[jdx]].create_dataset('freq_resp',data=freq_resp)
         welcome_message(args,std)
         std,sts = phase_range(std,sts,args.phase)
-        std.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
-        sts.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,zerophase=True)
+        std.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,
+                   zerophase=True)
+        sts.filter('bandpass',freqmin=args.fmin,freqmax=args.fmax,
+                   zerophase=True)
         now = time.time()
-
         st_id = range(0,len(std))
-
         i = 0
+        phase_info_list = []
+        meta_data_list = ['trace_#',
+                          'network',
+                          'station',
+                          'location',
+                          'evla',
+                          'evlo',
+                          'stla',
+                          'stlo',
+                          'gcarc',
+                          'az',
+                          'evdp',
+                          'tobs','del_t',
+                          'm1','m2','corcoeft'
+                          'update_m1','update_m2','update_corcoeft'
+                          's_amp','d_amp',
+                          'SNR_0','SNR_1','amp_rat',
+                          'left_rat','right_rat',
+                          'lsq']
+        #write metadata_list to h5file
+        h5f[group_name[jdx]].create_dataset('meta',
+                             data=array(meta_data_list))
         for idx,ii in enumerate(st_id):
             total = len(st_id)
             print ii,'{}%'.format(round(float(idx)/total*100.))
@@ -96,7 +151,7 @@ def main():
                 continue
             if nan_to_num(SNR[1]) < 8.0 or nan_to_num(SNR[1]) > 15000:
                 continue
-            if nan_to_num(max(corcoeft)) < 0.75:
+            if nan_to_num(max(corcoeft)) < 0.70:
                 continue
             if key == 'escape':
                 break
@@ -109,18 +164,41 @@ def main():
                                 update_m1,update_m2,
                                 s_amp,d_amp,
                                 del_t,SNR,amp_rat,left_rat,right_rat,lsq)
+                info_list = [ii,
+                                        std[idx].stats.network,
+                                        std[idx].stats.station,
+                                        std[idx].stats.location,
+                                        std[idx].stats.evla,
+                                        std[idx].stats.evlo,
+                                        std[idx].stats.stla,
+                                        std[idx].stats.stlo,
+                                        std[idx].stats.gcarc,
+                                        std[idx].stats.az,
+                                        std[idx].stats.evdp,
+                                        tobs,del_t,
+                                        m1,m2,corcoeft[0],
+                                        update_m1,update_m2,corcoeft[1],
+                                        s_amp,d_amp,
+                                        SNR[0],SNR[1],amp_rat,
+                                        left_rat,right_rat,
+                                        lsq]
+                phase_info_list.append([str(kk) for kk in info_list])
+
                 i += 1
             else:
                 print('control to keep')
                 print('alt to discard')
                 print('esc to leave')
 
+        h5f[group_name[jdx]].create_dataset('pick_info',
+                             data=array(phase_info_list))
         then = time.time()
         rate = (len(std))/(then-now)
         print 'Total time: {} sec\n'.format(then-now)
         print 'Your rate: {} traces/sec\n'.format(rate)
         print '{} Proposed picks\n'.format(idx)
         print '{} Accepted picks\n'.format(i)
+    h5f.close()
 
 def display_id(args):
     f = open(args.fname,'r').readlines()
@@ -172,7 +250,7 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
         itime = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
                               distance_in_degree=data_tr.stats.gcarc,
                               phase_list=['tts'])[0].time
-    elif phase[0] == 'P':
+    elif phase[0].startswith('P'):
         itime = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
                               distance_in_degree=data_tr.stats.gcarc,
                               phase_list=['ttp'])[0].time
@@ -435,6 +513,7 @@ def write_f_resp(fname,fmin,fmax):
         f.write('1\n')
         f.write('{}\n'.format(len(w)))
         savetxt(f,freq_resp,fmt='%1.7f')
+    return freq_resp
 
 def write_branch(fname,branch_list):
     with open(fname,'a') as f:
