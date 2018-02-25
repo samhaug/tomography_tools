@@ -113,9 +113,7 @@ def main():
         i = 0
         phase_info_list = []
         meta_data_list = ['trace_#',
-                          'network',
-                          'station',
-                          'location',
+                          'name',
                           'evla',
                           'evlo',
                           'stla',
@@ -123,6 +121,7 @@ def main():
                           'gcarc',
                           'az',
                           'evdp',
+                          'mag',
                           'tobs','del_t',
                           'm1','m2','corcoeft'
                           'update_m1','update_m2','update_corcoeft'
@@ -146,6 +145,7 @@ def main():
                 std[ii],sts[ii],[args.phase],
                 (-1*args.window,args.window),args.plot,args)
             except ValueError:
+                print('ValueError')
                 continue
             if nan_to_num(amp_rat) < 0.14 or nan_to_num(amp_rat) > 7:
                 continue
@@ -165,8 +165,8 @@ def main():
                                 s_amp,d_amp,
                                 del_t,SNR,amp_rat,left_rat,right_rat,lsq)
                 info_list = [ii,
-                                        std[idx].stats.network,
-                                        std[idx].stats.station,
+                                        std[idx].stats.network+'_'+\
+                                        std[idx].stats.station+'_'+\
                                         std[idx].stats.location,
                                         std[idx].stats.evla,
                                         std[idx].stats.evlo,
@@ -175,6 +175,7 @@ def main():
                                         std[idx].stats.gcarc,
                                         std[idx].stats.az,
                                         std[idx].stats.evdp,
+                                        std[idx].stats.mag,
                                         tobs,del_t,
                                         m1,m2,corcoeft[0],
                                         update_m1,update_m2,corcoeft[1],

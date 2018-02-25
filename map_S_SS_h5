@@ -1,0 +1,91 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : map_S_SS
+Purpose : map S - SS traveltimes from h5 data_file
+Creation Date : 12-09-2017
+Last Modified : Mon 18 Sep 2017 04:43:24 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+import numpy as np
+from obspy.geodetics.base import gps2dist_azimuth
+import geopy
+from geopy.distance import VincentyDistance
+from matplotlib import pyplot as plt
+from mpl_toolkits.basemap import Basemap
+import argparse
+import h5py
+
+
+def main():
+    parser = argparse.ArgumentParser(
+                       description='map S-SS delays')
+    parser.add_argument('-f','--h5_files',metavar='*S.dat',type=str,
+                        help='list of h5_files')
+
+    args = parser.parse_args()
+    fig,ax = plt.subplots()
+    m = Basemap(projection='mbtfpq',lon_0=180,resolution='c')
+    m.drawparallels(np.arange(-90.,120.,30.))
+    m.drawmeridians(np.arange(0.,360.,60.))
+    m.drawcoastlines()
+    for ii in range(len(args.h5_files)):
+        h5f = h5py.File(ii,'r',driver='core')
+        list_plot(s_list[ii],ss_list[ii],m)
+    plt.tight_layout()
+    plt.show()
+
+def list_plot(h5f,m):
+    s_dat = h5f['S20']['pick_info'][:]
+    ss_dat = h5f['SS20']['pick_info'][:]
+    c = np.array(list(set(s_dat[:,1]).intersection(set(ss_dat[:,1]))))
+    s_mask = np.in1d(s_dat[:,1],c)
+    ss_mask = np.in1d(ss_dat[:,1],c)
+    s_del = np.array([float(ii) for ii in s_dat[s_mask,11]])
+    ss_del = np.array([float(ii) for ii in ss_dat[ss_mask,11]])
+    slat = np.array([float(ii) for ii in ss_dat[ss_mask,2]])
+    slon = np.array([float(ii) for ii in ss_dat[ss_mask,3]])
+    rlat = np.array([float(ii) for ii in ss_dat[ss_mask,4]])
+    rlon = np.array([float(ii) for ii in ss_dat[ss_mask,5]])
+    del_t = ss_del-s_del
+    print 'Total measurements: ', (c)
+
+    for ii in range(len(slat)):
+        plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],del_t[ii])
+
+def plot_coords(m,slat,slon,rlat,rlon,del_t):
+    stlo,stla = m(rlon,rlat)
+    bearing = gps2dist_azimuth(slat,slon,rlat,rlon)[1]
+    dist = gps2dist_azimuth(slat,slon,rlat,rlon)[0]/2000.
+    origin = geopy.Point(slat,slon)
+    destination = VincentyDistance(kilometers=dist).destination(origin,bearing)
+    lon,lat = m(destination[1],destination[0])
+    if abs(del_t) <= 2:
+        size = 10
+    if 2 < abs(del_t) and abs(del_t) <= 4:
+        size = 20
+    if 4 < abs(del_t) and abs(del_t) <= 6:
+        size = 30
+    if 6 < abs(del_t) and abs(del_t) <= 8:
+        size = 40
+    if 8 < abs(del_t) and abs(del_t) <= 10:
+        size = 50
+    if 10 < abs(del_t) and abs(del_t) <= 12:
+        size = 60
+    if abs(del_t) > 12:
+        size = 70
+    if del_t <= 0:
+        color = 'blue'
+        marker = 'o'
+    if del_t > 0:
+        color = 'red'
+        marker = 'x'
+    m.scatter(lon,lat,linewidth=1,color=color,alpha=0.6,s=1.5*size,marker=marker)
+
+main()
+
