@@ -3,8 +3,8 @@
 '''
 ==============================================================================
 
-File Name : map_S_SS
-Purpose : map SS - S traveltimes from h5 data_file
+File Name : map_Sdiff
+Purpose : map Sdiff traveltimes from h5 data_file
 Creation Date : 12-09-2017
 Last Modified : Mon 18 Sep 2017 04:43:24 PM EDT
 Created By : Samuel M. Haugland
@@ -25,7 +25,7 @@ from glob import glob
 
 def main():
     parser = argparse.ArgumentParser(
-                       description='map S-SS delays')
+                       description='map Sdiff times')
     parser.add_argument('-f','--h5_files',metavar='*picks.h5',type=str,
                         help='list of h5_files')
 
@@ -47,23 +47,16 @@ def main():
     plt.show()
 
 def list_plot(h5f,m,total):
-    s_dat = h5f['S20']['pick_info'][:]
-    ss_dat = h5f['SS20']['pick_info'][:]
-    c = np.array(list(set(s_dat[:,1]).intersection(set(ss_dat[:,1]))))
-    s_mask = np.in1d(s_dat[:,1],c)
-    ss_mask = np.in1d(ss_dat[:,1],c)
-    s_del = np.array([float(ii) for ii in s_dat[s_mask,11]])
-    ss_del = np.array([float(ii) for ii in ss_dat[ss_mask,11]])
-    slat = np.array([float(ii) for ii in ss_dat[ss_mask,2]])
-    slon = np.array([float(ii) for ii in ss_dat[ss_mask,3]])
-    rlat = np.array([float(ii) for ii in ss_dat[ss_mask,4]])
-    rlon = np.array([float(ii) for ii in ss_dat[ss_mask,5]])
-    del_t = ss_del-s_del
-    print 'Measurements: ', len(c)
-
+    s_dat = h5f['Sdiff15']['pick_info'][:]
+    s_del = np.array([float(ii) for ii in s_dat[:,11]])
+    slat = np.array([float(ii) for ii in s_dat[:,2]])
+    slon = np.array([float(ii) for ii in s_dat[:,3]])
+    rlat = np.array([float(ii) for ii in s_dat[:,4]])
+    rlon = np.array([float(ii) for ii in s_dat[:,5]])
+    print 'Measurements: ', len(s_del)
     for ii in range(len(slat)):
-        plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],del_t[ii])
-    return len(c)
+        plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],s_del[ii])
+    return len(s_del)
 
 def plot_coords(m,slat,slon,rlat,rlon,del_t):
     stlo,stla = m(rlon,rlat)
