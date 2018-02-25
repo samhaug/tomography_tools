@@ -44,7 +44,7 @@ def main():
     parser.add_argument('--plot',dest='plot',
                         action='store_true',help='Plot waveforms')
 
-    h5f_name = getcwd().split('/')[-1]+'.h5'
+    h5f_name = getcwd().split('/')[-1]+'.picks.h5'
     h5f = h5py.File(h5f_name,'a',driver='core')
     args = parser.parse_args()
     std_in,sts_in = read_streams(args.data,args.synth)

@@ -20,27 +20,33 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.basemap import Basemap
 import argparse
 import h5py
+from glob import glob
 
 
 def main():
     parser = argparse.ArgumentParser(
                        description='map S-SS delays')
-    parser.add_argument('-f','--h5_files',metavar='*S.dat',type=str,
+    parser.add_argument('-f','--h5_files',metavar='*picks.h5',type=str,
                         help='list of h5_files')
 
     args = parser.parse_args()
     fig,ax = plt.subplots()
+    dat_list = glob(args.h5_files)
     m = Basemap(projection='mbtfpq',lon_0=180,resolution='c')
     m.drawparallels(np.arange(-90.,120.,30.))
     m.drawmeridians(np.arange(0.,360.,60.))
     m.drawcoastlines()
-    for ii in range(len(args.h5_files)):
+    total = 0
+    for ii in dat_list:
+        print ii
         h5f = h5py.File(ii,'r',driver='core')
-        list_plot(s_list[ii],ss_list[ii],m)
+        c = list_plot(h5f,m,total)
+        total += c
+    print 'Total measurements: ',total
     plt.tight_layout()
     plt.show()
 
-def list_plot(h5f,m):
+def list_plot(h5f,m,total):
     s_dat = h5f['S20']['pick_info'][:]
     ss_dat = h5f['SS20']['pick_info'][:]
     c = np.array(list(set(s_dat[:,1]).intersection(set(ss_dat[:,1]))))
@@ -53,10 +59,11 @@ def list_plot(h5f,m):
     rlat = np.array([float(ii) for ii in ss_dat[ss_mask,4]])
     rlon = np.array([float(ii) for ii in ss_dat[ss_mask,5]])
     del_t = ss_del-s_del
-    print 'Total measurements: ', (c)
+    print 'Measurements: ', len(c)
 
     for ii in range(len(slat)):
         plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],del_t[ii])
+    return len(c)
 
 def plot_coords(m,slat,slon,rlat,rlon,del_t):
     stlo,stla = m(rlon,rlat)
