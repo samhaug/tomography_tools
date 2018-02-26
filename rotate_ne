@@ -29,46 +29,58 @@ def main():
     new_st2 = obspy.core.Stream()
 
     for tr in st1:
-        a1.append(tr.stats.station+tr.stats.network+tr.stats.location)
+        tr.stats.name = tr.stats.station+tr.stats.network+tr.stats.location
+        a1.append(tr.stats.name)
     for tr in st2:
-        a2.append(tr.stats.station+tr.stats.network+tr.stats.location)
+        tr.stats.name = tr.stats.station+tr.stats.network+tr.stats.location
+        a2.append(tr.stats.name)
     i = set(a1).intersection(set(a2))
     for tr in st1:
-        if tr.stats.station+tr.stats.network+tr.stats.location not in i:
+        if tr.stats.name not in i:
             st1.remove(tr)
     for tr in st2:
-        if tr.stats.station+tr.stats.network+tr.stats.location not in i:
+        if tr.stats.name not in i:
             st2.remove(tr)
-    st1.sort(['station'])
-    st2.sort(['station'])
+    st1.sort(['name'])
+    st2.sort(['name'])
 
     for idx,tr in enumerate(st1):
-        if st1[idx].stats.npts == st2[idx].stats.npts:
+        if st1[idx].stats.name != st2[idx].stats.name:
+            print('stream mismatch')
+            continue
+        elif st1[idx].stats.npts == st2[idx].stats.npts:
             new_st1.append(st1[idx])
             new_st2.append(st2[idx])
         elif np.abs(st1[idx].stats.npts-st2[idx].stats.npts) == 1:
-            chop = min(st1[idx].stats.npts,st2[idx].stats.npts)
-            st1[idx].data = st1[idx].data[0:chop]
-            st2[idx].data = st2[idx].data[0:chop]
+            print('one off')
+            dat_len = min(st1[idx].stats.npts,st2[idx].stats.npts)
+            st1[idx].data = st1[idx].data[0:dat_len]
+            st2[idx].data = st2[idx].data[0:dat_len]
             new_st1.append(st1[idx])
             new_st2.append(st2[idx])
         else:
+            print('slice misalign ',np.abs(st1[idx].stats.npts-
+                                           st2[idx].stats.npts))
             continue
+            #st1[idx] = st1[idx].slice(st1[idx].stats.starttime,
+            #                          st1[idx].stats.starttime+3500)
+            #st2[idx] = st2[idx].slice(st2[idx].stats.starttime,
+            #                          st2[idx].stats.starttime+3500)
 
-    print len(new_st1)
-    print len(new_st2)
+            #new_st1.append(st1[idx])
+            #new_st2.append(st2[idx])
 
     for idx,tr in enumerate(new_st1):
         cmpaz = tr.stats.sac['cmpaz']
         trn = new_st1[idx].copy()
         trn.stats.channel = 'BHN'
-        #trn.stats.calib = 'BH1'
         trn.stats.calib = 4.0
         tre = new_st2[idx].copy()
         tre.stats.channel = 'BHE'
-        #tre.stats.calib = 'BH2'
-        n = np.cos(np.radians(cmpaz))*new_st1[idx].data+np.sin(np.radians(cmpaz))*new_st1[idx].data
-        e = -np.sin(np.radians(cmpaz))*new_st2[idx].data+np.cos(np.radians(cmpaz))*new_st2[idx].data
+        n = np.cos(np.radians(cmpaz))*new_st1[idx].data+\
+                   np.sin(np.radians(cmpaz))*new_st1[idx].data
+        e = -np.sin(np.radians(cmpaz))*new_st2[idx].data+\
+                   np.cos(np.radians(cmpaz))*new_st2[idx].data
         tre.data = e
         trn.data = n
         tre.write('processed/{}.{}.{}.{}'.format(
@@ -83,17 +95,5 @@ def main():
                    trn.stats.channel),format='SAC')
 
 main()
-
-
-
-
-
-
-
-
-
-
-
-
 
 

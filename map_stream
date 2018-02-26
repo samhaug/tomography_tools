@@ -1,0 +1,39 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : map_stations
+Purpose : map stations from single event
+Creation Date : 12-09-2017
+Last Modified : Mon 18 Sep 2017 04:43:24 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+import numpy as np
+from matplotlib import pyplot as plt
+from sys import argv
+from mpl_toolkits.basemap import Basemap
+import obspy
+
+
+def main():
+    st = obspy.read(argv[1])
+    print 'total: ',len(st)
+    m = Basemap(projection='cyl')
+    for tr in st:
+        xpt, ypt = m(tr.stats.stlo,tr.stats.stla)
+        m.scatter(xpt,ypt,s=2,c='k',marker='o',lw=0)
+    xpt, ypt = m(st[0].stats.evlo,st[0].stats.evla)
+    m.scatter(xpt,ypt,s=30,c='r',marker='o',lw=1)
+    m.drawcoastlines(linewidth=0.5)
+    plt.tight_layout()
+    plt.show()
+
+main()
+
+
+
+

@@ -23,12 +23,14 @@ def main():
     tri = find_stf(std_Z[0])
     sts_Z = obspy.core.Stream()
 
+    print('st_Z')
     for tr in std_Z:
         try:
-            st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
-                                                 tr.stats.station,
-                                                 tr.stats.location,
-                                                 tr.stats.channel))
+            st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(
+                            tr.stats.network,
+                            tr.stats.station,
+                            tr.stats.location,
+                            tr.stats.channel))
             st[0].stats.baz = tr.stats.baz
             st[0].stats.az = tr.stats.az
             st[0].stats.gcarc = tr.stats.gcarc
@@ -40,10 +42,11 @@ def main():
             st[0].stats.evdp = tr.stats.evdp
             st[0].stats.stel = tr.stats.stel
             st[0].stats.mag = tr.stats.mag
-            conv = signal.convolve(st[0].data,signal.triang(st[0].stats.sampling_rate*tri),mode='same')
+            conv = signal.convolve(st[0].data,signal.triang(
+                                   st[0].stats.sampling_rate*tri),
+                                   mode='same')
             conv *= st[0].data.max()/conv.max()
             st[0].data = conv
-
             sts_Z.append(st[0])
         except IOError:
             continue
@@ -52,9 +55,11 @@ def main():
     std_E = obspy.read('st_E.h5')
     sts_E = obspy.core.Stream()
 
+    print('st_E')
     for tr in std_E:
         try:
-            st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
+            st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(
+                                                 tr.stats.network,
                                                  tr.stats.station,
                                                  tr.stats.location,
                                                  tr.stats.channel))
@@ -69,7 +74,9 @@ def main():
             st[0].stats.evdp = tr.stats.evdp
             st[0].stats.stel = tr.stats.stel
             st[0].stats.mag = tr.stats.mag
-            conv = signal.convolve(st[0].data,signal.triang(st[0].stats.sampling_rate*tri),mode='same')
+            conv = signal.convolve(st[0].data,signal.triang(
+                                   st[0].stats.sampling_rate*tri),
+                                   mode='same')
             conv *= st[0].data.max()/conv.max()
             st[0].data = conv
             sts_E.append(st[0])
@@ -79,9 +86,12 @@ def main():
 
     std_N = obspy.read('st_N.h5')
     sts_N = obspy.core.Stream()
+
+    print('st_N')
     for tr in std_N:
         try:
-            st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(tr.stats.network,
+            st = obspy.read('syngine_iasp91_2s/{}.{}.{}.{}'.format(
+                                                 tr.stats.network,
                                                  tr.stats.station,
                                                  tr.stats.location,
                                                  tr.stats.channel))
@@ -96,13 +106,14 @@ def main():
             st[0].stats.evdp = tr.stats.evdp
             st[0].stats.stel = tr.stats.stel
             st[0].stats.mag = tr.stats.mag
-            conv = signal.convolve(st[0].data,signal.triang(st[0].stats.sampling_rate*tri),mode='same')
+            conv = signal.convolve(st[0].data,signal.triang(
+                                   st[0].stats.sampling_rate*tri),
+                                   mode='same')
             conv *= st[0].data.max()/conv.max()
             st[0].data = conv
             sts_N.append(st[0])
         except IOError:
             continue
-    sts_E.write('sts_E.h5',format='H5')
     sts_N.write('sts_N.h5',format='H5')
 
 def find_stf(tr):
