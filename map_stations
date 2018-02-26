@@ -21,9 +21,13 @@ from mpl_toolkits.basemap import Basemap
 def main():
     datapath = argv[1]
     e_lines = exceptions(datapath)
-    a_lines,coord = available(datapath)
-    print 'available: ',int(float(len(a_lines))/3.)
-    #print 'excluded: ',len(e_lines)
+    a_lines,coord,bhz,bhe,bhn,bh1,bh2 = available(datapath)
+    print 'BHZ: ',bhz
+    print 'BHE: ',bhe
+    print 'BHN: ',bhn
+    print 'BH1: ',bh1
+    print 'BH2: ',bh2
+    print 'total: ',bhz+bhn+bhe+bh1+bh2
     a_coord = avail_coords(a_lines,e_lines,coord)
     evla,evlo = stat_event(datapath)
     plot_coords(np.array(coord),evla,evlo)
@@ -51,10 +55,25 @@ def available(datapath):
     coord = np.genfromtxt(datapath+'/info/availability.txt',delimiter=',')[:,4:6]
     lines = open(datapath+'/info/availability.txt','r').readlines()
     a_lines = []
+    bhz=0
+    bhn=0
+    bhe=0
+    bh1=0
+    bh2=0
     for ii in lines:
         jj = ii.strip().split(',')
+        if jj[3] == 'BHZ':
+            bhz+=1
+        if jj[3] == 'BHE':
+            bhe+=1
+        if jj[3] == 'BHN':
+            bhn+=1
+        if jj[3] == 'BH1':
+            bh1+=1
+        if jj[3] == 'BH2':
+            bh2+=1
         a_lines.append('{}.{}..{}'.format(jj[0],jj[1],jj[3]))
-    return a_lines,coord
+    return a_lines,coord,bhz,bhe,bhn,bh1,bh2
 
 def stat_event(datapath):
     coord = np.genfromtxt(datapath+'/info/station_event',delimiter=',')

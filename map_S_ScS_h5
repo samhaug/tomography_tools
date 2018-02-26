@@ -47,8 +47,8 @@ def main():
     plt.show()
 
 def list_plot(h5f,m,total):
-    s_dat = h5f['S20']['pick_info'][:]
-    sks_dat = h5f['SKS15']['pick_info'][:]
+    s_dat = h5f['S10']['pick_info'][:]
+    sks_dat = h5f['ScS10']['pick_info'][:]
     c = np.array(list(set(s_dat[:,1]).intersection(set(sks_dat[:,1]))))
     s_mask = np.in1d(s_dat[:,1],c)
     sks_mask = np.in1d(sks_dat[:,1],c)
@@ -86,10 +86,10 @@ def plot_coords(m,slat,slon,rlat,rlon,del_t):
         size = 60
     if abs(del_t) > 12:
         size = 70
-    if del_t >= 0:
+    if del_t <= 0:
         color = 'blue'
         marker = 'o'
-    if del_t < 0:
+    if del_t > 0:
         color = 'red'
         marker = 'x'
     m.scatter(lon,lat,linewidth=1,color=color,alpha=0.6,

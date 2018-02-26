@@ -64,16 +64,16 @@ def main():
         if std_in[0].stats.evdp > 300:
             phase_list.append('sS')
             fmax_list.append(1./15)
-        fmin_list = [1./120]*len(phase_list)
-        w_list = [1.5/i for i in fmax_list]
+        fmin_list = [1./100]*len(phase_list)
+        w_list = [2.0/i for i in fmax_list]
 
     elif std_in[0].stats.channel.endswith('R'):
         phase_list = ['SKS','SKKS']
         fmax_list = [1./15,1./15]
         group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
                       range(len(phase_list))]
-        fmin_list = [1./120]*len(phase_list)
-        w_list = [1.5/i for i in fmax_list]
+        fmin_list = [1./100]*len(phase_list)
+        w_list = [2.0/i for i in fmax_list]
 
     elif std_in[0].stats.channel.endswith('Z'):
         phase_list = ['P','P','P','P',
@@ -82,8 +82,8 @@ def main():
                      1./10,1./20,1./40]
         group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
                       range(len(phase_list))]
-        fmin_list = [1./120]*len(phase_list)
-        w_list = [1.5/i for i in fmax_list]
+        fmin_list = [1./100]*len(phase_list)
+        w_list = [2.0/i for i in fmax_list]
 
     for jdx in range(len(phase_list)):
         print 'Working on phase: '+phase_list[jdx]
@@ -135,23 +135,37 @@ def main():
         for idx,ii in enumerate(st_id):
             total = len(st_id)
             print ii,'{}%'.format(round(float(idx)/total*100.))
-            try:
-                tobs,corcoeft,\
-                m1,m2,update_m1,\
-                update_m2,s_amp,\
-                d_amp,del_t,key,\
-                SNR,amp_rat,left_rat,right_rat,lsq=\
-                find_ttime(
-                std[ii],sts[ii],[args.phase],
-                (-1*args.window,args.window),args.plot,args)
-            except ValueError:
-                print('ValueError')
+            a = find_ttime(std[ii],sts[ii],[args.phase],
+                           (-1*args.window,args.window),args.plot,args)
+            if a == False:
                 continue
+            elif a != False:
+                tobs=a[0]
+                corcoeft=a[1]
+                m1=a[2]
+                m2=a[3]
+                update_m1=a[4]
+                update_m2=a[5]
+                s_amp=a[6]
+                d_amp=a[7]
+                del_t=a[8]
+                key=a[9]
+                SNR=a[10]
+                amp_rat=a[11]
+                left_rat=a[12]
+                right_rat=a[13]
+                lsq=a[14]
+            #except ValueError:
+            #    print('ValueError')
+            #    continue
             if nan_to_num(amp_rat) < 0.14 or nan_to_num(amp_rat) > 7:
+                print('amp_rat too high')
                 continue
             if nan_to_num(SNR[1]) < 8.0 or nan_to_num(SNR[1]) > 15000:
+                print('SNR too high')
                 continue
             if nan_to_num(max(corcoeft)) < 0.70:
+                print('corcoeft too low')
                 continue
             if key == 'escape':
                 break
@@ -236,6 +250,10 @@ def npcorr(s,d,samp):
 
 def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     samp = data_tr.stats.sampling_rate
+    ssamp = synth_tr.stats.sampling_rate
+    if samp != ssamp:
+        print('sampling_rate_problem')
+        return False
     d_o = data_tr.stats.o
     d_st = data_tr.stats.starttime
     d_et = data_tr.stats.endtime
@@ -261,47 +279,60 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                               phase_list=phase)[0].time
 
     n3 = data_tr.slice(d_st+itime+d_o-(2./args.fmin),
-                       d_st+itime+d_o-30).data
+                       d_st+itime+d_o-(0.5/args.fmin)).data
     d = data_tr.slice(d_st+time+d_o+window_tuple[0],
                       d_st+time+d_o+window_tuple[1]).data
     s = synth_tr.slice(s_st+time+s_o+window_tuple[0],
                        s_st+time+s_o+window_tuple[1]).data
 
     dx = min(len(d),len(s))
-    d = d[0:dx]
-    s = s[0:dx]
+    if abs(len(d)-len(s)) > 10:
+        print('data/sample mismatch')
+        return False
+    else:
+        d = d[0:dx]
+        s = s[0:dx]
 
     t = linspace(window_tuple[0],window_tuple[1],num=len(d))
-    T = (1./args.fmax)*1.5
-    SNR_1 = round(max(d)/max(n3),2)
-    SNR_2 = round(max(d)/mean(sqrt(n3**2)),2)
+    T = (1./args.fmax)*1.3
+    try:
+        SNR_1 = round(max(d)/max(n3),2)
+        SNR_2 = round(max(d)/mean(sqrt(n3**2)),2)
+    except ValueError:
+        print('SNR_problem')
+        return False
 
     SNR = (SNR_1,SNR_2)
     #First correlation
     del_t = npcorr(s,d,samp)
-    mid = int(len(s)/2.)
-    cs  = s[mid-int(samp*T):mid+int(samp*T)]
-    cd  = d[mid+int(samp*(del_t-T)):mid+int(samp*(del_t+T))]
-    s_amp = (max(cs)-min(cs))
-    d_amp = (max(cd)-min(cd))
-    amp_rat = round(s_amp/d_amp,2)
+    mid_s = int(len(s)/2.)
+    mid_d = int(len(d)/2.)
+    try:
+        cs  = s[mid_s-int(samp*T):mid_s+int(samp*T)]
+        cd  = d[mid_d+int(samp*(del_t-T)):mid_d+int(samp*(del_t+T))]
+        s_amp = (max(cs)-min(cs))
+        d_amp = (max(cd)-min(cd))
+        amp_rat = round(s_amp/d_amp,2)
+    except ValueError:
+        print('index_error')
+        return False
     cx = min(len(cs),len(cd))
     cs = cs[0:cx]
     cd = cd[0:cx]
 
     sr = roll(s,int(samp*(del_t)))
-    #lsq = round(sum((sr/abs(sr).max()-d/abs(d).max())**2)/abs(window_tuple[0]),2)
-    lsq = 1-round(sum((sr/max(abs(sr))-d/max(abs(d)))**2)/sum((d/max(abs(d)))**2),2)
+    lsq = 1-round(sum((sr/max(abs(sr))-d/max(abs(d)))**2)/
+                   sum((d/max(abs(d)))**2),2)
     #Second correlation
     update_t = npcorr(cs,cd,samp)
     update_cs = roll(cs,int(samp*update_t))
 
     tcs = linspace(int(-T),int(T),num=len(cs))
     tcd = linspace(int(-T),int(T),num=len(cd))
-    m1 = round(max(correlate(d,s,mode='same'))/max(correlate(s,s,mode='same')),3)
-    m2 = round(max(correlate(d,d,mode='same'))/max(correlate(d,s,mode='same')),3)
-    #update_m1 = round(max(correlate(cd,update_cs))/max(correlate(update_cs,update_cs)),3)
-    #update_m2 = round(max(correlate(cd,cd))/max(correlate(cd,update_cs)),3)
+    m1 = round(max(correlate(d,s,mode='same'))/
+               max(correlate(s,s,mode='same')),3)
+    m2 = round(max(correlate(d,d,mode='same'))/
+               max(correlate(d,s,mode='same')),3)
     update_m1 = round(max(correlate(cd,cs))/max(correlate(cs,cs)),3)
     update_m2 = round(max(correlate(cd,cd))/max(correlate(cd,cs)),3)
     corcoeft_1 = round(1-((m2-m1)/m2),3)
@@ -313,7 +344,6 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     sd = correlate(s,d,mode='same')
     ss_imax = argmax(ss)
     arm_max = where(arm(ss)[0] == ss_imax)[0]
-    #print max(ss),ss[arm(ss)[0][arm_max+1]][0]
 
     sd_imax = argmax(sd)
     arm_max = where(arm(sd)[0] == sd_imax)[0]
@@ -326,15 +356,19 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
 
     if plot == True:
         if phase[0].startswith('S') or phase[0].startswith('sS'):
-            ds_time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
-                              distance_in_degree=data_tr.stats.gcarc,
-                              phase_list=['S','SS','SSS','SKS','SKKS','sS','ScS','sScS','ScSScS','sScSScS'])
+            ds_time = model.get_travel_times(source_depth_in_km=
+                                       data_tr.stats.evdp,
+                                       distance_in_degree=data_tr.stats.gcarc,
+                              phase_list=['S','SS','SSS','SKS','SKKS',
+                                         'sS','ScS','sScS','ScSScS','sScSScS'])
             dp_time = 0
         if phase[0] == 'P':
-            dp_time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
+            dp_time = model.get_travel_times(source_depth_in_km=
+                                             data_tr.stats.evdp,
                               distance_in_degree=data_tr.stats.gcarc,
                               phase_list=['p'+phase[0]])[0].time
-            ds_time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
+            ds_time = model.get_travel_times(source_depth_in_km=
+                                             data_tr.stats.evdp,
                               distance_in_degree=data_tr.stats.gcarc,
                               phase_list=['s'+phase[0]])[0].time
         class ClickSelect(object):
@@ -366,14 +400,17 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
         ax_bot.plot(ts_full,synth_tr.data,color='r')
         ax_full.plot(td_full,data_tr.data,color='k')
         ax_full.plot(ts_full,synth_tr.data,color='r')
-        ax_full.set_xlim(0,int(synth_tr.stats.npts/synth_tr.stats.sampling_rate))
+        ax_full.set_xlim(0,int(synth_tr.stats.npts/
+                         synth_tr.stats.sampling_rate))
         ax_bot.set_xlim(time+synth_tr.stats.o-400,time+synth_tr.stats.o+400)
         ax_bot.set_ylim(data_tr.data.min()*1.4,data_tr.data.max()*1.4)
         ax_right.plot(tcs,cs/max(abs(cs)),color='r')
         ax_right.plot(tcs,update_cs/max(abs(update_cs)),color='r',ls='--')
         ax_right.plot(tcd,cd/max(abs(cd)),color='k')
-        ax_right.plot(tcs,roll(update_cs/max(abs(update_cs)),int(samp*(1))),color='b',ls='--',alpha=0.3)
-        ax_right.plot(tcs,roll(update_cs/max(abs(update_cs)),int(samp*(-1))),color='g',ls='--',alpha=0.3)
+        ax_right.plot(tcs,roll(update_cs/max(abs(update_cs)),
+                      int(samp*(1))),color='b',ls='--',alpha=0.3)
+        ax_right.plot(tcs,roll(update_cs/max(abs(update_cs)),
+                      int(samp*(-1))),color='g',ls='--',alpha=0.3)
 
         ax_left.plot(t,d,color='k')
         ax_left.plot(t,s,color='r')
@@ -384,10 +421,14 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
         ax_right.set_xlabel('Time (s)')
         ax_bot.axvline(time,color='k')
         #ax_bot.axvspan(itime+synth_tr.stats.o-(2./args.fmin),itime+synth_tr.stats.o-30,color='b',alpha=0.3)
-        ax_bot.axvspan(d_st+itime+d_o-(2./args.fmin),d_st+itime+d_o-30,color='b',alpha=0.3)
-        ax_bot.axvspan(time+synth_tr.stats.o+window_tuple[0],time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
-        ax_full.axvspan(itime+synth_tr.stats.o-(2./args.fmin),itime+synth_tr.stats.o-30,color='b',alpha=0.3)
-        ax_full.axvspan(time+synth_tr.stats.o+window_tuple[0],time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
+        ax_bot.axvspan(d_st+itime+d_o-(2./args.fmin),
+                       d_st+itime+d_o-30,color='b',alpha=0.3)
+        ax_bot.axvspan(time+synth_tr.stats.o+window_tuple[0],
+                    time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
+        ax_full.axvspan(itime+synth_tr.stats.o-(2./args.fmin),
+                        itime+synth_tr.stats.o-30,color='b',alpha=0.3)
+        ax_full.axvspan(time+synth_tr.stats.o+window_tuple[0],
+                    time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
         for ii in ds_time:
             #ax_bot.axvline(ii.time,color='k')
             ax_bot.text(ii.time,0,ii.name)
