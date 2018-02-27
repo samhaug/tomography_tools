@@ -67,19 +67,19 @@ def main():
 def set_remove(st,sts):
     d = []
     for tr in st:
-        #tr.name = tr.stats.network+tr.stats.station+tr.stats.location
-        d.append(tr.name)
+        tr.stats.name = tr.stats.network+tr.stats.station+tr.stats.location
+        d.append(tr.stats.name)
     s = []
     for tr in sts:
-        #tr.name = tr.stats.network+tr.stats.station+tr.stats.location
-        s.append(tr.name)
+        tr.stats.name = tr.stats.network+tr.stats.station+tr.stats.location
+        s.append(tr.stats.name)
     c = set(d).intersection(set(s))
 
     for tr in sts:
-        if tr.name not in c:
+        if tr.stats.name not in c:
             sts.remove(tr)
     for tr in st:
-        if tr.name not in c:
+        if tr.stats.name not in c:
             st.remove(tr)
     return st,sts
 

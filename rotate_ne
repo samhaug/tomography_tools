@@ -23,6 +23,9 @@ from matplotlib import pyplot as plt
 def main():
     a1 = []
     a2 = []
+    stream_mismatch = 0
+    one_off = 0
+    slice_misalign = 0
     st1 = obspy.read('processed/*BH1')
     st2 = obspy.read('processed/*BH2')
     new_st1 = obspy.core.Stream()
@@ -46,21 +49,20 @@ def main():
 
     for idx,tr in enumerate(st1):
         if st1[idx].stats.name != st2[idx].stats.name:
-            print('stream mismatch')
+            stream_mismatch += 1
             continue
         elif st1[idx].stats.npts == st2[idx].stats.npts:
             new_st1.append(st1[idx])
             new_st2.append(st2[idx])
         elif np.abs(st1[idx].stats.npts-st2[idx].stats.npts) == 1:
-            print('one off')
+            one_off += 1
             dat_len = min(st1[idx].stats.npts,st2[idx].stats.npts)
             st1[idx].data = st1[idx].data[0:dat_len]
             st2[idx].data = st2[idx].data[0:dat_len]
             new_st1.append(st1[idx])
             new_st2.append(st2[idx])
         else:
-            print('slice misalign ',np.abs(st1[idx].stats.npts-
-                                           st2[idx].stats.npts))
+            slice_misalign += 1
             continue
 
     for idx,tr in enumerate(new_st1):
@@ -86,6 +88,9 @@ def main():
                    trn.stats.station,
                    trn.stats.location,
                    trn.stats.channel),format='SAC')
+    print('stream_mismatch '+str(stream_mismatch))
+    print('one_off '+str(one_off))
+    print('slice_misalign '+str(slice_misalign))
 
 main()
 

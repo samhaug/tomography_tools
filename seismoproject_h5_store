@@ -4,21 +4,20 @@
 #
 
 #--read_catalog $read_catalog
-name=$1_process
-echo "# Sample PBS for parallel jobs'" > "$name"_submit.pbs
-echo "#PBS -A seismoproject_fluxod"                >>"$name"_submit.pbs
-echo "#PBS -q fluxod"                    >>"$name"_submit.pbs
-echo "#PBS -l qos=flux"                >>"$name"_submit.pbs
-echo "#PBS -N $name"               >>"$name"_submit.pbs
-echo "#PBS -l nodes=1:ppn=1,pmem=8gb,walltime=10:00:00">>"$name"_submit.pbs
-echo "#PBS -d ."                       >>"$name"_submit.pbs
-echo "#PBS -m n"                       >>"$name"_submit.pbs
-echo "#PBS -V"                         >>"$name"_submit.pbs
-echo "#PBS -o $name.out"           >>"$name"_submit.pbs
-echo "#PBS -e $name.err"           >>"$name"_submit.pbs
-echo "ulimit -s unlimited "            >>"$name"_submit.pbs
-echo "h5_pickle"  >> "$name"_submit.pbs
-qsub "$name"_submit.pbs
+echo "# Sample PBS for parallel jobs'" > h5_submit.pbs
+echo "#PBS -A seismoproject_fluxod"                >>h5_submit.pbs
+echo "#PBS -q fluxod"                    >>h5_submit.pbs
+echo "#PBS -l qos=flux"                >>h5_submit.pbs
+echo "#PBS -N h5_submit"               >>h5_submit.pbs
+echo "#PBS -l nodes=1:ppn=1,pmem=8gb,walltime=1:00:00">>h5_submit.pbs
+echo "#PBS -d ."                       >>h5_submit.pbs
+echo "#PBS -m n"                       >>h5_submit.pbs
+echo "#PBS -V"                         >>h5_submit.pbs
+echo "#PBS -o h5_out"           >>h5_submit.pbs
+echo "#PBS -e h5_err"           >>h5_submit.pbs
+echo "ulimit -s unlimited "            >>h5_submit.pbs
+echo "h5_pickle"  >> h5_submit.pbs
+qsub h5_submit.pbs
 
 
 
