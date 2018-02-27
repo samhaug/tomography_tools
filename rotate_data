@@ -16,6 +16,7 @@ import numpy as np
 from subprocess import call
 import os
 import obspy
+from obspy.signal.rotate import rotate_ne_rt
 from sys import argv
 from glob import glob
 from matplotlib import pyplot as plt
@@ -47,7 +48,7 @@ def main():
     for ii,tr in enumerate(stn):
         o_mis = np.round(np.abs(tr.stats.o-ste[ii].stats.o),2)
         st_mis = np.round(np.abs(tr.stats.starttime-ste[ii].stats.starttime),2)
-        if o_mis != st_mis:
+        if o_mis-st_mis > 0.1:
             print('o_time not equal to st misfit')
             continue
         else:
@@ -61,10 +62,7 @@ def main():
             lim = min(len(e),len(n))
             e = e[::lim]
             n = n[::lim]
-            tdat = e*np.cos(np.radians(ba+180))-\
-                   n*np.sin(np.radians(ba+180))
-            rdat = e*np.sin(np.radians(ba+180))+\
-                   n*np.cos(np.radians(ba+180))
+            rdat,tdat = rotate_ne_rt(n,e,stn[idx].stats.baz)
             trt.data = tdat
             trr.data = rdat
             stt.append(trt)

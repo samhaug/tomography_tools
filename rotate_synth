@@ -19,6 +19,7 @@ import obspy
 from sys import argv
 from glob import glob
 from matplotlib import pyplot as plt
+from obspy.signal.rotate import rotate_ne_rt
 
 def main():
     el = []
@@ -29,7 +30,8 @@ def main():
     stt = obspy.core.Stream()
     str = obspy.core.Stream()
     for ii in range(0,i):
-        name = ste[ii].stats.station+ste[ii].stats.network+ste[ii].stats.location
+        name = ste[ii].stats.station+ste[ii].stats.network+\
+               ste[ii].stats.location
         for tr in stn:
             if tr.stats.station+tr.stats.network+tr.stats.location == name:
                 trt = tr.copy()
@@ -41,8 +43,7 @@ def main():
                 e = ste[ii].data
                 n = tr.data
                 ba = ste[ii].stats.baz
-                tdat = e*np.cos(np.radians(ba+180))-n*np.sin(np.radians(ba+180))
-                rdat = e*np.sin(np.radians(ba+180))+n*np.cos(np.radians(ba+180))
+                rdat,tdat = rotate_ne_rt(n,e,ba)
                 trt.data = tdat
                 trr.data = rdat
                 stt.append(trt)
