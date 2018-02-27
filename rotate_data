@@ -22,6 +22,8 @@ from glob import glob
 from matplotlib import pyplot as plt
 
 def main():
+    otime_misfit = 0
+    e_n_mismatch= 0
     el = []
     nl = []
     ste = obspy.read('st_E.h5')
@@ -42,14 +44,14 @@ def main():
     stn.sort(['name'])
     ste.sort(['name'])
     stt = obspy.core.Stream()
-    str = obspy.core.Stream()
-    print len(ste)
-    print len(stn)
+    st_r = obspy.core.Stream()
+    if len(stn) != len(ste):
+        print('len stn != len ste')
     for ii,tr in enumerate(stn):
-        o_mis = np.round(np.abs(tr.stats.o-ste[ii].stats.o),2)
-        st_mis = np.round(np.abs(tr.stats.starttime-ste[ii].stats.starttime),2)
-        if o_mis-st_mis > 0.1:
-            print('o_time not equal to st misfit')
+        o_mis = np.round(tr.stats.o-ste[ii].stats.o,2)
+        st_mis = np.round(tr.stats.starttime-ste[ii].stats.starttime,2)
+        if -1*o_mis != st_mis:
+            otime_misfit += 1
             continue
         else:
             trt = tr.copy()
@@ -59,16 +61,23 @@ def main():
             e = ste[ii].data
             n = tr.data
             ba = ste[ii].stats.baz
-            lim = min(len(e),len(n))
-            e = e[::lim]
-            n = n[::lim]
-            rdat,tdat = rotate_ne_rt(n,e,stn[idx].stats.baz)
-            trt.data = tdat
-            trr.data = rdat
-            stt.append(trt)
-            str.append(trr)
+            if np.abs(len(e)-len(n)) > 200:
+                e_n_mismatch += 1
+                continue
+            else:
+                lim = min(len(e),len(n))
+                e = e[0:lim]
+                n = n[0:lim]
+                rdat,tdat = rotate_ne_rt(n,e,stn[ii].stats.baz)
+                trt.data = tdat
+                trr.data = rdat
+                stt.append(trt)
+                st_r.append(trr)
+    print(str(otime_misfit)+' origin time misfits')
+    print(str(e_n_mismatch)+' n e mismatches')
     stt.write('st_T.h5',format='H5')
-    str.write('st_R.h5',format='H5')
+    st_r.write('st_R.h5',format='H5')
+
 
 main()
 

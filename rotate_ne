@@ -62,13 +62,6 @@ def main():
             print('slice misalign ',np.abs(st1[idx].stats.npts-
                                            st2[idx].stats.npts))
             continue
-            #st1[idx] = st1[idx].slice(st1[idx].stats.starttime,
-            #                          st1[idx].stats.starttime+3500)
-            #st2[idx] = st2[idx].slice(st2[idx].stats.starttime,
-            #                          st2[idx].stats.starttime+3500)
-
-            #new_st1.append(st1[idx])
-            #new_st2.append(st2[idx])
 
     for idx,tr in enumerate(new_st1):
         cmpaz = tr.stats.sac['cmpaz']

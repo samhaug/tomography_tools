@@ -23,8 +23,8 @@ from matplotlib import pyplot as plt
 def main():
     sts = obspy.read('sts_R.h5')
     st  = obspy.read('st_R.h5')
-    sts = remove_redundant(sts)
-    st = remove_redundant(st)
+    #sts = remove_redundant(sts)
+    #st = remove_redundant(st)
     st,sts = set_remove(st,sts)
     st.sort(['name'])
     sts.sort(['name'])
@@ -32,12 +32,13 @@ def main():
         st.write('st_R.h5',format='H5')
         sts.write('sts_R.h5',format='H5')
     else:
+        print('UNEVEN R')
         call('touch UNEVEN_R',shell=True)
 
     sts = obspy.read('sts_T.h5')
     st  = obspy.read('st_T.h5')
-    sts = remove_redundant(sts)
-    st = remove_redundant(st)
+    #sts = remove_redundant(sts)
+    #st = remove_redundant(st)
     st,sts = set_remove(st,sts)
     st.sort(['name'])
     sts.sort(['name'])
@@ -45,12 +46,13 @@ def main():
         st.write('st_T.h5',format='H5')
         sts.write('sts_T.h5',format='H5')
     else:
+        print('UNEVEN T')
         call('touch UNEVEN_T',shell=True)
 
     sts = obspy.read('sts_Z.h5')
     st  = obspy.read('st_Z.h5')
-    sts = remove_redundant(sts)
-    st = remove_redundant(st)
+    #sts = remove_redundant(sts)
+    #st = remove_redundant(st)
     st,sts = set_remove(st,sts)
     st.sort(['name'])
     sts.sort(['name'])
@@ -59,8 +61,8 @@ def main():
         st.write('st_Z.h5',format='H5')
         sts.write('sts_Z.h5',format='H5')
     else:
+        print('UNEVEN Z')
         call('touch UNEVEN_Z',shell=True)
-
 
 def set_remove(st,sts):
     d = []
