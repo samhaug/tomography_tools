@@ -25,9 +25,13 @@ from glob import glob
 
 def main():
     parser = argparse.ArgumentParser(
-                       description='map Sdiff times')
+                       description='map S times')
     parser.add_argument('-f','--h5_files',metavar='*picks.h5',type=str,
                         help='list of h5_files')
+    parser.add_argument('-l','--max_dist',metavar='float',type=float,
+                        default=180,help='maximum_distance (deg)')
+    parser.add_argument('-s','--min_dist',metavar='float',type=float,
+                        default=0,help='minimum distance (deg)')
 
     args = parser.parse_args()
     fig,ax = plt.subplots()
@@ -40,8 +44,10 @@ def main():
     for ii in dat_list:
         print ii
         h5f = h5py.File(ii,'r',driver='core')
-        c = list_plot(h5f,m,total,'Sdiff15')
-        c = list_plot(h5f,m,total,'Sdiff30')
+        c = list_plot(h5f,m,total,'S5')
+        c = list_plot(h5f,m,total,'S10')
+        c = list_plot(h5f,m,total,'S20')
+        c = list_plot(h5f,m,total,'S40')
         total += c
     print 'Total measurements: ',total
     plt.tight_layout()
@@ -54,9 +60,13 @@ def list_plot(h5f,m,total,name):
     slon = np.array([float(ii) for ii in s_dat[:,3]])
     rlat = np.array([float(ii) for ii in s_dat[:,4]])
     rlon = np.array([float(ii) for ii in s_dat[:,5]])
+    gcarc = np.array([float(ii) for ii in s_dat[:,6]])
     print 'Measurements: ', len(s_del)
     for ii in range(len(slat)):
-        plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],s_del[ii])
+        if gcarc < args.max_dist and gcarc > args.min_dist:
+            plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],s_del[ii])
+        else:
+            continue
     return len(s_del)
 
 def plot_coords(m,slat,slon,rlat,rlon,del_t):
