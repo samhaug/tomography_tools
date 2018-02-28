@@ -77,9 +77,11 @@ def main():
 
     elif std_in[0].stats.channel.endswith('Z'):
         phase_list = ['P','P','P','P',
-                      'PP','PP','PP']
+                      'PP','PP','PP',
+                      'Pdiff','Pdiff']
         fmax_list = [1./5,1./10,1./20,1./40,
-                     1./10,1./20,1./40]
+                     1./10,1./20,1./40,
+                     1./10,1./20]
         group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
                       range(len(phase_list))]
         fmin_list = [1./100]*len(phase_list)

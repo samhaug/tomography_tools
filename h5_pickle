@@ -12,3 +12,4 @@ echo 'rotate_synth'
 rotate_synth
 echo 'remove_excess'
 remove_excess
+touch 'DONE'
