@@ -44,16 +44,16 @@ def main():
     for ii in dat_list:
         print ii
         h5f = h5py.File(ii,'r',driver='core')
-        c = list_plot(h5f,m,total,'S5')
-        c = list_plot(h5f,m,total,'S10')
-        c = list_plot(h5f,m,total,'S20')
-        c = list_plot(h5f,m,total,'S40')
+        c = list_plot(h5f,m,total,'S5',args)
+        c = list_plot(h5f,m,total,'S10',args)
+        c = list_plot(h5f,m,total,'S20',args)
+        c = list_plot(h5f,m,total,'S40',args)
         total += c
     print 'Total measurements: ',total
     plt.tight_layout()
     plt.show()
 
-def list_plot(h5f,m,total,name):
+def list_plot(h5f,m,total,name,args):
     s_dat = h5f[name]['pick_info'][:]
     s_del = np.array([float(ii) for ii in s_dat[:,11]])
     slat = np.array([float(ii) for ii in s_dat[:,2]])
@@ -63,7 +63,7 @@ def list_plot(h5f,m,total,name):
     gcarc = np.array([float(ii) for ii in s_dat[:,6]])
     print 'Measurements: ', len(s_del)
     for ii in range(len(slat)):
-        if gcarc < args.max_dist and gcarc > args.min_dist:
+        if gcarc[ii] <= args.max_dist and gcarc[ii] >= args.min_dist:
             plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],s_del[ii])
         else:
             continue

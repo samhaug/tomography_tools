@@ -98,10 +98,10 @@ def main():
         args.phase = phase_list[jdx]
         args.fmin = fmin_list[jdx]
         args.fmax = fmax_list[jdx]
-        fname = write_header(args.phase,args)
+        #fname = write_header(args.phase,args)
         branch_list = phase_info(args.phase)
-        write_branch(fname,branch_list)
-        freq_resp = write_f_resp(fname,args.fmin,args.fmax)
+        #write_branch(fname,branch_list)
+        freq_resp = write_f_resp(args.fmin,args.fmax)
         #write_freqency to h5file
         h5f[group_name[jdx]].create_dataset('freq_resp',data=freq_resp)
         welcome_message(args,std)
@@ -125,8 +125,8 @@ def main():
                           'evdp',
                           'mag',
                           'tobs','del_t',
-                          'm1','m2','corcoeft'
-                          'update_m1','update_m2','update_corcoeft'
+                          'm1','m2','corcoeft',
+                          'update_m1','update_m2','update_corcoeft',
                           's_amp','d_amp',
                           'SNR_0','SNR_1','amp_rat',
                           'left_rat','right_rat',
@@ -174,12 +174,12 @@ def main():
             if key == 'alt':
                 continue
             elif key == 'control':
-                write_amplitude(fname,ii,std[ii],
-                                tobs,corcoeft,
-                                m1,m2,
-                                update_m1,update_m2,
-                                s_amp,d_amp,
-                                del_t,SNR,amp_rat,left_rat,right_rat,lsq)
+                #write_amplitude(fname,ii,std[ii],
+                #                tobs,corcoeft,
+                #                m1,m2,
+                #                update_m1,update_m2,
+                #                s_amp,d_amp,
+                #                del_t,SNR,amp_rat,left_rat,right_rat,lsq)
                 info_list = [ii,
                                         std[idx].stats.network+'_'+\
                                         std[idx].stats.station+'_'+\
@@ -545,7 +545,7 @@ def write_header(phase_name,args):
         f.write('None\n')
     return fname
 
-def write_f_resp(fname,fmin,fmax):
+def write_f_resp(fmin,fmax):
     fmin *= 2*pi
     fmax *= 2*pi
     b,a = butter(4,(fmin,fmax),'bandpass',analog=True)
@@ -553,10 +553,10 @@ def write_f_resp(fname,fmin,fmax):
     w = round(w,5)
     h = abs(w*round(h,5))
     freq_resp = hstack((transpose([w]),transpose([h])))
-    with open(fname,'a') as f:
-        f.write('1\n')
-        f.write('{}\n'.format(len(w)))
-        savetxt(f,freq_resp,fmt='%1.7f')
+    #with open(fname,'a') as f:
+    #    f.write('1\n')
+    #    f.write('{}\n'.format(len(w)))
+    #    savetxt(f,freq_resp,fmt='%1.7f')
     return freq_resp
 
 def write_branch(fname,branch_list):
