@@ -166,6 +166,9 @@ def main():
             if nan_to_num(SNR[1]) < 8.0 or nan_to_num(SNR[1]) > 15000:
                 print('SNR too high')
                 continue
+            #if nan_to_num(SNR[0]) < 8.0 or nan_to_num(SNR[0]) > 15000:
+            #    print('SNR too high')
+            #    continue
             if nan_to_num(max(corcoeft)) < 0.70:
                 print('corcoeft too low')
                 continue
@@ -450,9 +453,11 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
 
         clicks = ClickSelect()
         fig = plt.gcf()
-        if nan_to_num(min(SNR)) < 1.5 or nan_to_num(corcoeft[1]) < 0.75 or nan_to_num(amp_rat) < 0.14:
+        if nan_to_num(min(SNR)) < 1.5 or nan_to_num(corcoeft[1]) < 0.75 \
+           or nan_to_num(amp_rat) < 0.14:
             fig.set_facecolor('red')
-        elif nan_to_num(max(SNR)) > 15000 or nan_to_num(corcoeft[1]) > 1.5 or nan_to_num(amp_rat) > 7:
+        elif nan_to_num(max(SNR)) > 15000 or nan_to_num(corcoeft[1]) > \
+             1.5 or nan_to_num(amp_rat) > 7:
             fig.set_facecolor('red')
         else:
             fig.set_facecolor('limegreen')

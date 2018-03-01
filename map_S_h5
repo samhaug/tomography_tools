@@ -44,10 +44,30 @@ def main():
     for ii in dat_list:
         print ii
         h5f = h5py.File(ii,'r',driver='core')
-        c = list_plot(h5f,m,total,'S5',args)
-        c = list_plot(h5f,m,total,'S10',args)
-        c = list_plot(h5f,m,total,'S20',args)
-        c = list_plot(h5f,m,total,'S40',args)
+        try:
+            c = list_plot(h5f,m,total,'S5',args)
+        except IndexError:
+            continue
+        try:
+            c = list_plot(h5f,m,total,'S10',args)
+        except IndexError:
+            continue
+        try:
+            c = list_plot(h5f,m,total,'S20',args)
+        except IndexError:
+            continue
+        try:
+            c = list_plot(h5f,m,total,'S40',args)
+        except IndexError:
+            continue
+        try:
+            c = list_plot(h5f,m,total,'Sdiff15',args)
+        except IndexError:
+            continue
+        try:
+            c = list_plot(h5f,m,total,'Sdiff30',args)
+        except IndexError:
+            continue
         total += c
     print 'Total measurements: ',total
     plt.tight_layout()
@@ -67,6 +87,8 @@ def list_plot(h5f,m,total,name,args):
             plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],s_del[ii])
         else:
             continue
+    lon,lat = m(slon[0],slat[0])
+    m.scatter(lon,lat,color='k',s=80,marker='D')
     return len(s_del)
 
 def plot_coords(m,slat,slon,rlat,rlon,del_t):
@@ -93,10 +115,13 @@ def plot_coords(m,slat,slon,rlat,rlon,del_t):
     if del_t <= 0:
         color = 'blue'
         marker = 'o'
+        facecolor='none'
     if del_t > 0:
         color = 'red'
         marker = 'x'
-    m.scatter(lon,lat,linewidth=1,color=color,alpha=0.6,s=1.5*size,marker=marker)
+        facecolor='red'
+    m.scatter(lon,lat,linewidth=1,color=color,alpha=0.6,
+              s=1.5*size,marker=marker,facecolor=facecolor)
 
 main()
 

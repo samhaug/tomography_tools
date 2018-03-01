@@ -60,6 +60,8 @@ def list_plot(h5f,m,total):
     rlon = np.array([float(ii) for ii in sks_dat[sks_mask,5]])
     del_t = sks_del-s_del
     print 'Measurements: ', len(c)
+    lon,lat = m(slon[0],slat[0])
+    m.scatter(lon,lat,color='k',s=80,marker='D')
 
     for ii in range(len(slat)):
         plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],del_t[ii])
@@ -89,11 +91,13 @@ def plot_coords(m,slat,slon,rlat,rlon,del_t):
     if del_t >= 0:
         color = 'blue'
         marker = 'o'
+        facecolor='none'
     if del_t < 0:
         color = 'red'
         marker = 'x'
+        facecolor='red'
     m.scatter(lon,lat,linewidth=1,color=color,alpha=0.6,
-              s=1.5*size,marker=marker)
+              s=1.5*size,marker=marker,facecolor=facecolor)
 
 main()
 
