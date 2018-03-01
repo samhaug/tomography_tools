@@ -61,7 +61,7 @@ def main():
             e = ste[ii].data
             n = tr.data
             ba = ste[ii].stats.baz
-            if np.abs(len(e)-len(n)) > 200:
+            if np.abs(len(e)-len(n)) > 1000:
                 e_n_mismatch += 1
                 continue
             else:

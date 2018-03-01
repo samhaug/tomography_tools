@@ -575,6 +575,11 @@ def phase_info(phase_name):
     elif phase_name == 'Sdiff':
         branch_list = ['Sdiff','Sdiff','DONT USE','DONT USE','DONT USE']
 
+    if phase_name == 'pPdiff':
+        branch_list = ['pPdiff','sSdiff','DONT USE','DONT USE','DONT USE']
+    elif phase_name == 'Pdiff':
+        branch_list = ['Pdiff','Sdiff','DONT USE','DONT USE','DONT USE']
+
     elif phase_name == 'S':
         branch_list = ['S','S','6371 1 2','3482 2 2','6371 5 0']
     elif phase_name == 'sS':

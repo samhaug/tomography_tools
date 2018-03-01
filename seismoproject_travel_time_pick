@@ -8,13 +8,13 @@ echo "# Sample PBS for parallel jobs'"              >  h5_submit.pbs
 echo "#PBS -A seismoproject_fluxod"                 >> h5_submit.pbs
 echo "#PBS -q fluxod"                               >> h5_submit.pbs
 echo "#PBS -l qos=flux"                             >> h5_submit.pbs
-echo "#PBS -N h5_submit"                            >> h5_submit.pbs
+echo "#PBS -N ttime"                            >> h5_submit.pbs
 echo "#PBS -l nodes=1:ppn=1,pmem=8gb,walltime=04:00:00">> h5_submit.pbs
 echo "#PBS -d ."                                    >> h5_submit.pbs
 echo "#PBS -m n"                                    >> h5_submit.pbs
 echo "#PBS -V"                                      >> h5_submit.pbs
-echo "#PBS -o h5.out"                               >> h5_submit.pbs
-echo "#PBS -e h5.err"                               >> h5_submit.pbs
+echo "#PBS -o ttime.out"                               >> h5_submit.pbs
+echo "#PBS -e ttime.err"                               >> h5_submit.pbs
 echo "ulimit -s unlimited "                         >> h5_submit.pbs
 echo "all_travel_time_pick -s sts_T.h5 -d st_T.h5"  >> h5_submit.pbs
 echo "all_travel_time_pick -s sts_R.h5 -d st_R.h5"  >> h5_submit.pbs
