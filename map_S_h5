@@ -40,36 +40,27 @@ def main():
     m.drawparallels(np.arange(-90.,120.,30.))
     m.drawmeridians(np.arange(0.,360.,60.))
     m.drawcoastlines()
-    total = 0
+    s5_total = 0
+    s10_total = 0
+    s20_total = 0
+    s40_total = 0
+    sdiff15_total = 0
+    sdiff30_total = 0
     for ii in dat_list:
         print ii
         h5f = h5py.File(ii,'r',driver='core')
-        try:
-            c = list_plot(h5f,m,total,'S5',args)
-        except IndexError,KeyError:
-            continue
-        try:
-            c = list_plot(h5f,m,total,'S10',args)
-        except IndexError,KeyError:
-            continue
-        try:
-            c = list_plot(h5f,m,total,'S20',args)
-        except IndexError,KeyError:
-            continue
-        try:
-            c = list_plot(h5f,m,total,'S40',args)
-        except IndexError,KeyError:
-            continue
-        try:
-            c = list_plot(h5f,m,total,'Sdiff15',args)
-        except IndexError,KeyError:
-            continue
-        try:
-            c = list_plot(h5f,m,total,'Sdiff30',args)
-        except IndexError,KeyError:
-            continue
-        total += c
-    print 'Total measurements: ',total
+        s5_total += list_plot(h5f,m,total,'S5',args)
+        s10_total += list_plot(h5f,m,total,'S10',args)
+        s20_total += list_plot(h5f,m,total,'S20',args)
+        s40_total += list_plot(h5f,m,total,'S40',args)
+        sdiff15_total += list_plot(h5f,m,total,'Sdiff15',args)
+        sdiff30_total += list_plot(h5f,m,total,'Sdiff30',args)
+    print 's5 total: ', s5_total
+    print 's10 total: ', s10_total
+    print 's20 total: ', s20_total
+    print 's40 total: ', s40_total
+    print 'sdiff15 total: ', sdiff15_total
+    print 'sdiff30 total: ', sdiff30_total
     plt.tight_layout()
     plt.show()
 
@@ -84,7 +75,7 @@ def list_plot(h5f,m,total,name,args):
     rlat = np.array([float(ii) for ii in s_dat[:,4]])
     rlon = np.array([float(ii) for ii in s_dat[:,5]])
     gcarc = np.array([float(ii) for ii in s_dat[:,6]])
-    print 'Measurements: ', len(s_del)
+    #print 'Measurements: ', len(s_del)
     for ii in range(len(slat)):
         if gcarc[ii] <= args.max_dist and gcarc[ii] >= args.min_dist:
             plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],s_del[ii])
