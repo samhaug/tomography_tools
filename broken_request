@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#Check year and restart broken months
+
+year=$1'_*'
+
+for d in $year/20*
+do
+    if [ ! -f $d/st_T.h5 ] || [ ! -f $d/sts_T.h5 ] || \
+       [ ! -f $d/st_R.h5 ] || [ ! -f $d/sts_R.h5 ]
+    then
+        echo $d
+        ls $d
+        echo ' '
+        (cd $d && rm h5.*)
+        (cd $d && rm *.h5)
+        (cd $d && seismoproject_h5_store)
+    fi
+done
+

@@ -40,19 +40,19 @@ def main():
     for ii in dat_list:
         print ii
         h5f = h5py.File(ii,'r',driver='core')
-        try:
-            c = list_plot(h5f,m,total)
-        except KeyError:
-            print 'Key Error'
-            continue
+        c = list_plot(h5f,m,total)
         total += c
     print 'Total measurements: ',total
     plt.tight_layout()
     plt.show()
 
 def list_plot(h5f,m,total):
-    s_dat = h5f['P20']['pick_info'][:]
-    ss_dat = h5f['PP20']['pick_info'][:]
+    try:
+        s_dat = h5f['P20']['pick_info'][:]
+        ss_dat = h5f['PP20']['pick_info'][:]
+    except KeyError:
+        print 'keyerror'
+        return 0
     c = np.array(list(set(s_dat[:,1]).intersection(set(ss_dat[:,1]))))
     s_mask = np.in1d(s_dat[:,1],c)
     ss_mask = np.in1d(ss_dat[:,1],c)
@@ -100,7 +100,7 @@ def plot_coords(m,slat,slon,rlat,rlon,del_t):
         marker = 'x'
         facecolor='red'
     m.scatter(lon,lat,linewidth=1,color=color,alpha=0.6,
-              s=1.5*size,marker=marker,facecolor=facecolor)
+              s=3.0*size,marker=marker,facecolor=facecolor)
 
 main()
 

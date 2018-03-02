@@ -46,27 +46,27 @@ def main():
         h5f = h5py.File(ii,'r',driver='core')
         try:
             c = list_plot(h5f,m,total,'S5',args)
-        except IndexError:
+        except IndexError,KeyError:
             continue
         try:
             c = list_plot(h5f,m,total,'S10',args)
-        except IndexError:
+        except IndexError,KeyError:
             continue
         try:
             c = list_plot(h5f,m,total,'S20',args)
-        except IndexError:
+        except IndexError,KeyError:
             continue
         try:
             c = list_plot(h5f,m,total,'S40',args)
-        except IndexError:
+        except IndexError,KeyError:
             continue
         try:
             c = list_plot(h5f,m,total,'Sdiff15',args)
-        except IndexError:
+        except IndexError,KeyError:
             continue
         try:
             c = list_plot(h5f,m,total,'Sdiff30',args)
-        except IndexError:
+        except IndexError,KeyError:
             continue
         total += c
     print 'Total measurements: ',total
@@ -74,7 +74,10 @@ def main():
     plt.show()
 
 def list_plot(h5f,m,total,name,args):
-    s_dat = h5f[name]['pick_info'][:]
+    try:
+        s_dat = h5f[name]['pick_info'][:]
+    except KeyError:
+        return 0
     s_del = np.array([float(ii) for ii in s_dat[:,11]])
     slat = np.array([float(ii) for ii in s_dat[:,2]])
     slon = np.array([float(ii) for ii in s_dat[:,3]])
