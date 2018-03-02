@@ -49,12 +49,12 @@ def main():
     for ii in dat_list:
         print ii
         h5f = h5py.File(ii,'r',driver='core')
-        s5_total += list_plot(h5f,m,total,'S5',args)
-        s10_total += list_plot(h5f,m,total,'S10',args)
-        s20_total += list_plot(h5f,m,total,'S20',args)
-        s40_total += list_plot(h5f,m,total,'S40',args)
-        sdiff15_total += list_plot(h5f,m,total,'Sdiff15',args)
-        sdiff30_total += list_plot(h5f,m,total,'Sdiff30',args)
+        s5_total += list_plot(h5f,m,s5_total,'S5',args)
+        s10_total += list_plot(h5f,m,s10_total,'S10',args)
+        s20_total += list_plot(h5f,m,s20_total,'S20',args)
+        s40_total += list_plot(h5f,m,s40_total,'S40',args)
+        sdiff15_total += list_plot(h5f,m,sdiff15_total,'Sdiff15',args)
+        sdiff30_total += list_plot(h5f,m,sdiff30_total,'Sdiff30',args)
     print 's5 total: ', s5_total
     print 's10 total: ', s10_total
     print 's20 total: ', s20_total

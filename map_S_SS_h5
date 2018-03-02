@@ -39,16 +39,26 @@ def main():
     total = 0
     for ii in dat_list:
         print ii
-        h5f = h5py.File(ii,'r',driver='core')
-        c = list_plot(h5f,m,total)
+        try:
+            h5f = h5py.File(ii,'r',driver='core')
+        except IOError:
+            continue
+        try:
+            c = list_plot(h5f,m,total)
+            c = list_plot_diff(h5f,m,total)
+        except IndexError:
+            continue
         total += c
     print 'Total measurements: ',total
     plt.tight_layout()
     plt.show()
 
 def list_plot(h5f,m,total):
-    s_dat = h5f['S20']['pick_info'][:]
-    ss_dat = h5f['SS20']['pick_info'][:]
+    try:
+        s_dat = h5f['S20']['pick_info'][:]
+        ss_dat = h5f['SS20']['pick_info'][:]
+    except KeyError:
+        return 0
     c = np.array(list(set(s_dat[:,1]).intersection(set(ss_dat[:,1]))))
     s_mask = np.in1d(s_dat[:,1],c)
     ss_mask = np.in1d(ss_dat[:,1],c)
@@ -63,7 +73,30 @@ def list_plot(h5f,m,total):
     lon,lat = m(slon[0],slat[0])
     for ii in range(len(slat)):
         plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],del_t[ii])
-    m.scatter(lon,lat,color='k',s=80,marker='D')
+    m.scatter(lon,lat,color='k',s=80,marker='D',rasterized=True)
+    return len(c)
+
+def list_plot_diff(h5f,m,total):
+    try:
+        s_dat = h5f['Sdiff30']['pick_info'][:]
+        ss_dat = h5f['SS20']['pick_info'][:]
+    except KeyError:
+        return 0
+    c = np.array(list(set(s_dat[:,1]).intersection(set(ss_dat[:,1]))))
+    s_mask = np.in1d(s_dat[:,1],c)
+    ss_mask = np.in1d(ss_dat[:,1],c)
+    s_del = np.array([float(ii) for ii in s_dat[s_mask,11]])
+    ss_del = np.array([float(ii) for ii in ss_dat[ss_mask,11]])
+    slat = np.array([float(ii) for ii in ss_dat[ss_mask,2]])
+    slon = np.array([float(ii) for ii in ss_dat[ss_mask,3]])
+    rlat = np.array([float(ii) for ii in ss_dat[ss_mask,4]])
+    rlon = np.array([float(ii) for ii in ss_dat[ss_mask,5]])
+    del_t = ss_del-s_del
+    print 'Measurements: ', len(c)
+    lon,lat = m(slon[0],slat[0])
+    for ii in range(len(slat)):
+        plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],del_t[ii])
+    m.scatter(lon,lat,color='k',s=80,marker='D',rasterized=True)
     return len(c)
 
 def plot_coords(m,slat,slon,rlat,rlon,del_t):

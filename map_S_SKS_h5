@@ -40,13 +40,13 @@ def main():
     for ii in dat_list:
         print ii
         h5f = h5py.File(ii,'r',driver='core')
-        c = list_plot(h5f,m,total)
+        c = list_plot_20(h5f,m,total)
         total += c
     print 'Total measurements: ',total
     plt.tight_layout()
     plt.show()
 
-def list_plot(h5f,m,total):
+def list_plot_20(h5f,m,total):
     s_dat = h5f['S20']['pick_info'][:]
     sks_dat = h5f['SKS15']['pick_info'][:]
     c = np.array(list(set(s_dat[:,1]).intersection(set(sks_dat[:,1]))))
@@ -66,6 +66,7 @@ def list_plot(h5f,m,total):
     for ii in range(len(slat)):
         plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],del_t[ii])
     return len(c)
+
 
 def plot_coords(m,slat,slon,rlat,rlon,del_t):
     stlo,stla = m(rlon,rlat)
