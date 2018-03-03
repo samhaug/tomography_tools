@@ -52,12 +52,14 @@ def main():
     print len(sts_in)
 
     if std_in[0].stats.channel.endswith('T'):
-        phase_list = ['S','S','S','S','SS','SSS',
+        phase_list = ['S','S','S','S',
+                      'SS','SSS',
                       'ScS','ScSScS','ScSScSScS',
-                      'Sdiff','Sdiff']
-        fmax_list = [1./5,1./10,1./20,1./40,1./20,1./30,
+                      'Sdiff']
+        fmax_list = [1./5,1./10,1./20,1./40,
+                     1./20,1./30,
                      1./10,1./15,1./20,
-                     1./15,1./30]
+                     1./20]
         group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
                       range(len(phase_list))]
 
@@ -77,11 +79,12 @@ def main():
 
     elif std_in[0].stats.channel.endswith('Z'):
         phase_list = ['P','P','P','P',
-                      'PP','PP','PP',
-                      'Pdiff','Pdiff']
-        fmax_list = [1./5,1./10,1./20,1./40,
-                     1./10,1./20,1./40,
-                     1./10,1./20]
+                      'PP','PPP',
+                      'Pdiff',]
+        fmax_list = [1./35,1./5,1./10,1./20,1./40,
+                     1./20,1./30,
+                     1./20
+                     ]
         group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
                       range(len(phase_list))]
         fmin_list = [1./100]*len(phase_list)
@@ -124,13 +127,16 @@ def main():
                           'az',
                           'evdp',
                           'mag',
-                          'tobs','del_t',
-                          'm1','m2','corcoeft',
-                          'update_m1','update_m2','update_corcoeft',
+                          'tobs','del_t','update_t'
+                          'm1','m2',
+                          'update_m1','update_m2',
+                          'corcoeft_1','corcoeft_2'
                           's_amp','d_amp',
-                          'SNR_0','SNR_1','amp_rat',
+                          'SNR_0','SNR_1',
+                          'lsq_0','lsq_1',
+                          'amp_rat',
                           'left_rat','right_rat',
-                          'lsq']
+                          ]
         #write metadata_list to h5file
         h5f[group_name[jdx]].create_dataset('meta',
                              data=array(meta_data_list))
@@ -142,66 +148,62 @@ def main():
             if a == False:
                 continue
             elif a != False:
-                tobs=a[0]
-                corcoeft=a[1]
-                m1=a[2]
-                m2=a[3]
-                update_m1=a[4]
-                update_m2=a[5]
-                s_amp=a[6]
-                d_amp=a[7]
-                del_t=a[8]
-                key=a[9]
-                SNR=a[10]
-                amp_rat=a[11]
-                left_rat=a[12]
-                right_rat=a[13]
-                lsq=a[14]
-            #except ValueError:
-            #    print('ValueError')
-            #    continue
-            if nan_to_num(amp_rat) < 0.14 or nan_to_num(amp_rat) > 7:
-                print('amp_rat too high')
+                key=a[0]
+                tobs=a[1]
+                corcoeft=a[2]
+                m1=a[3]
+                m2=a[4]
+                update_m1=a[5]
+                update_m2=a[6]
+                s_amp=a[7]
+                d_amp=a[8]
+                lsq=a[9]
+                del_t=a[10]
+                update_t=a[11]
+                SNR=a[12]
+                amp_rat=a[13]
+                left_rat=a[14]
+                right_rat=a[15]
+
+            if nan_to_num(amp_rat) < 0.1 or nan_to_num(amp_rat) > 10:
+                print('amplitudes off x10')
                 continue
-            if nan_to_num(SNR[1]) < 8.0 or nan_to_num(SNR[1]) > 15000:
-                print('SNR too high')
+            if nan_to_num(SNR[0]) < 2.0 or nan_to_num(SNR[0]) > 15000:
+                print('SNR < 2 or error')
                 continue
-            #if nan_to_num(SNR[0]) < 8.0 or nan_to_num(SNR[0]) > 15000:
-            #    print('SNR too high')
-            #    continue
-            if nan_to_num(max(corcoeft)) < 0.70:
-                print('corcoeft too low')
+            if nan_to_num(max(corcoeft)) < 0.60:
+                print('corcoeft < 0.5')
+                continue
+            if nan_to_num(max(lsq)) < 0.60:
+                print('lsq < 0.5')
                 continue
             if key == 'escape':
                 break
             if key == 'alt':
                 continue
             elif key == 'control':
-                #write_amplitude(fname,ii,std[ii],
-                #                tobs,corcoeft,
-                #                m1,m2,
-                #                update_m1,update_m2,
-                #                s_amp,d_amp,
-                #                del_t,SNR,amp_rat,left_rat,right_rat,lsq)
                 info_list = [ii,
-                                        std[idx].stats.network+'_'+\
-                                        std[idx].stats.station+'_'+\
-                                        std[idx].stats.location,
-                                        std[idx].stats.evla,
-                                        std[idx].stats.evlo,
-                                        std[idx].stats.stla,
-                                        std[idx].stats.stlo,
-                                        std[idx].stats.gcarc,
-                                        std[idx].stats.az,
-                                        std[idx].stats.evdp,
-                                        std[idx].stats.mag,
-                                        tobs,del_t,
-                                        m1,m2,corcoeft[0],
-                                        update_m1,update_m2,corcoeft[1],
-                                        s_amp,d_amp,
-                                        SNR[0],SNR[1],amp_rat,
-                                        left_rat,right_rat,
-                                        lsq]
+                             std[idx].stats.network+'_'+\
+                             std[idx].stats.station+'_'+\
+                             std[idx].stats.location,
+                             std[idx].stats.evla,
+                             std[idx].stats.evlo,
+                             std[idx].stats.stla,
+                             std[idx].stats.stlo,
+                             std[idx].stats.gcarc,
+                             std[idx].stats.az,
+                             std[idx].stats.evdp,
+                             std[idx].stats.mag,
+                             tobs,del_t,update_t,
+                             m1,m2,update_m1,update_m2,
+                             corcoeft[0],
+                             corcoeft[1],
+                             s_amp,d_amp,
+                             SNR[0],SNR[1],
+                             lsq[0],lsq[1],
+                             amp_rat,
+                             left_rat,right_rat,
+                             ]
                 phase_info_list.append([str(kk) for kk in info_list])
 
                 i += 1
@@ -266,30 +268,37 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
     s_st = synth_tr.stats.starttime
     s_et = synth_tr.stats.endtime
 
-    if phase[0] == 'SKS' or phase[0] == 'SKKS':
+    #Find arrival time of first arriving phase
+    if phase[0] == 'SKS' or phase[0] == 'SKKS' or phase[0].startswith('P'):
         itime = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
-                              distance_in_degree=data_tr.stats.gcarc,
-                              phase_list=['ttp'])[0].time
+                                       distance_in_degree=data_tr.stats.gcarc,
+                                       phase_list=['ttp'])[0].time
+
     elif phase[0].startswith('S') or phase[0] == 'sS':
         itime = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
-                              distance_in_degree=data_tr.stats.gcarc,
-                              phase_list=['tts'])[0].time
-    elif phase[0].startswith('P'):
-        itime = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
-                              distance_in_degree=data_tr.stats.gcarc,
-                              phase_list=['ttp'])[0].time
+                                       distance_in_degree=data_tr.stats.gcarc,
+                                       phase_list=['tts'])[0].time
 
+    #Find arrival time of phase in question
     time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
-                              distance_in_degree=data_tr.stats.gcarc,
-                              phase_list=phase)[0].time
+                                  distance_in_degree=data_tr.stats.gcarc,
+                                  phase_list=phase)[0].time
 
-    n3 = data_tr.slice(d_st+itime+d_o-(2./args.fmin),
+    #Noise window
+    n3 = data_tr.slice(d_st+itime+d_o-(3./args.fmin),
                        d_st+itime+d_o-(0.5/args.fmin)).data
+    #Data window
     d = data_tr.slice(d_st+time+d_o+window_tuple[0],
                       d_st+time+d_o+window_tuple[1]).data
+
+    #Make larger data window incase del_t is of the order of the window
+    l_d = data_tr.slice(d_st+time+d_o+3*window_tuple[0],
+                      d_st+time+d_o+3*window_tuple[1]).data
+    #synth_window
     s = synth_tr.slice(s_st+time+s_o+window_tuple[0],
                        s_st+time+s_o+window_tuple[1]).data
 
+    #Make sure data and synth are same length, within a second
     dx = min(len(d),len(s))
     if abs(len(d)-len(s)) > 10:
         print('data/sample mismatch')
@@ -299,52 +308,87 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
         s = s[0:dx]
 
     t = linspace(window_tuple[0],window_tuple[1],num=len(d))
-    T = (1./args.fmax)*1.3
+    T = 1.3/args.fmax
+
+    #Make sure trace is long enough to measure SNR
     try:
         SNR_1 = round(max(d)/max(n3),2)
         SNR_2 = round(max(d)/mean(sqrt(n3**2)),2)
+        #make SNR tuple
+        SNR = (SNR_1,SNR_2)
     except ValueError:
         print('SNR_problem')
         return False
 
-    SNR = (SNR_1,SNR_2)
-    #First correlation
+    #First del_t correlation measurement
     del_t = npcorr(s,d,samp)
     mid_s = int(len(s)/2.)
     mid_d = int(len(d)/2.)
+    mid_l_d = int(len(l_d)/2.)
     try:
         cs  = s[mid_s-int(samp*T):mid_s+int(samp*T)]
-        cd  = d[mid_d+int(samp*(del_t-T)):mid_d+int(samp*(del_t+T))]
+        #slice correlated aligned data from large d
+        cd  = l_d[mid_l_d+int(samp*(del_t-T)):mid_l_d+int(samp*(del_t+T))]
         s_amp = (max(cs)-min(cs))
         d_amp = (max(cd)-min(cd))
         amp_rat = round(s_amp/d_amp,2)
     except ValueError:
         print('index_error')
+        print del_t
+        print mid_s,int(samp*T)
+        print mid_l_d,int(samp*(del_t-T)),int(samp*(del_t+T))
         return False
+
+    #Make sure correlated windows match
     cx = min(len(cs),len(cd))
+    if abs(len(cd)-len(cs)) > 10:
+        print('second data/sample mismatch')
+        return False
     cs = cs[0:cx]
     cd = cd[0:cx]
 
+    #roll original synthetic, plotted on left as dashed red
     sr = roll(s,int(samp*(del_t)))
-    lsq = 1-round(sum((sr/max(abs(sr))-d/max(abs(d)))**2)/
-                   sum((d/max(abs(d)))**2),2)
+
     #Second correlation
     update_t = npcorr(cs,cd,samp)
     update_cs = roll(cs,int(samp*update_t))
 
     tcs = linspace(int(-T),int(T),num=len(cs))
     tcd = linspace(int(-T),int(T),num=len(cd))
+
+    #m1 and m2 for first window
     m1 = round(max(correlate(d,s,mode='same'))/
                max(correlate(s,s,mode='same')),3)
     m2 = round(max(correlate(d,d,mode='same'))/
                max(correlate(d,s,mode='same')),3)
-    update_m1 = round(max(correlate(cd,cs))/max(correlate(cs,cs)),3)
-    update_m2 = round(max(correlate(cd,cd))/max(correlate(cd,cs)),3)
+
+    #m1 and m2 for second, adjusted window
+    update_m1 = round(max(correlate(cd,cs,mode='same'))/
+                      max(correlate(cs,cs,mode='same')),3)
+    update_m2 = round(max(correlate(cd,cd,mode='same'))/
+                      max(correlate(cd,cs,mode='same')),3)
+
+    #corfoect for first window
     corcoeft_1 = round(1-((m2-m1)/m2),3)
+    #corfoect for second, adjusted window
     corcoeft_2 = round(1-((update_m2-update_m1)/update_m2),3)
-    tobs = del_t+update_t+time
+    #join as tuple
     corcoeft = (corcoeft_1,corcoeft_2)
 
+    #lsq for first window
+    lsq_1 = 1-round(sum((sr/max(abs(sr))-d/max(abs(d)))**2)/
+                  sum((d/max(abs(d)))**2),2)
+    #lsq for second, adjusted window
+    lsq_2 = 1-round(sum((update_cs/max(abs(update_cs))-cd/max(abs(cd)))**2)/
+                         sum((cd/max(abs(cd)))**2),2)
+    #join as tuple
+    lsq = (lsq_1,lsq_2)
+
+    #observed time: predicted time plus first and updated time shift
+    tobs = time+del_t+update_t
+
+    #Find correlation shoulders
     ss = correlate(s,s,mode='same')
     sd = correlate(s,d,mode='same')
     ss_imax = argmax(ss)
@@ -367,7 +411,7 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                               phase_list=['S','SS','SSS','SKS','SKKS',
                                          'sS','ScS','sScS','ScSScS','sScSScS'])
             dp_time = 0
-        if phase[0] == 'P':
+        if phase[0].startswith('P'):
             dp_time = model.get_travel_times(source_depth_in_km=
                                              data_tr.stats.evdp,
                               distance_in_degree=data_tr.stats.gcarc,
@@ -375,7 +419,7 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
             ds_time = model.get_travel_times(source_depth_in_km=
                                              data_tr.stats.evdp,
                               distance_in_degree=data_tr.stats.gcarc,
-                              phase_list=['s'+phase[0]])[0].time
+                              phase_list=['s'+phase[0]])
         class ClickSelect(object):
             def __init__(self):
                 self.key = None
@@ -387,28 +431,38 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                 return True
 
         gs = gridspec.GridSpec(50, 100)
-        ax_bot = plt.subplot(gs[26:38,:])
-        ax_full = plt.subplot(gs[39:50,:])
-        ax_left = plt.subplot(gs[0:25,0:49])
-        ax_right = plt.subplot(gs[0:25,51::])
 
-        ax_full.yaxis.set_ticklabels([])
+        ax_bot = plt.subplot(gs[26:38,:])
         ax_bot.yaxis.set_ticklabels([])
+
+        ax_full = plt.subplot(gs[39:50,:])
+        ax_full.yaxis.set_ticklabels([])
+
+        ax_left = plt.subplot(gs[0:25,0:49])
         ax_left.yaxis.set_ticklabels([])
+        ax_left.set_xlabel('Time (s)')
+
+        ax_right = plt.subplot(gs[0:25,51::])
         ax_right.yaxis.set_ticklabels([])
         ax_right.yaxis.set_ticklabels([])
+        ax_right.set_xlabel('Time (s)')
+
         td_full = linspace(-1*d_o,d_et-d_st-d_o,
                            num=data_tr.stats.npts)
         ts_full = linspace(-1*s_o,s_et-s_st-s_o,
                            num=synth_tr.stats.npts)
-        ax_bot.plot(td_full,data_tr.data,color='k')
-        ax_bot.plot(ts_full,synth_tr.data,color='r')
+
         ax_full.plot(td_full,data_tr.data,color='k')
         ax_full.plot(ts_full,synth_tr.data,color='r')
         ax_full.set_xlim(0,int(synth_tr.stats.npts/
                          synth_tr.stats.sampling_rate))
-        ax_bot.set_xlim(time+synth_tr.stats.o-400,time+synth_tr.stats.o+400)
-        ax_bot.set_ylim(data_tr.data.min()*1.4,data_tr.data.max()*1.4)
+
+        ax_full.axvspan(itime+d_o-(3./args.fmin),
+                        itime+d_o-(0.5/args.fmin),color='b',alpha=0.3)
+
+        ax_full.axvspan(time+synth_tr.stats.o+window_tuple[0],
+                    time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
+
         ax_right.plot(tcs,cs/max(abs(cs)),color='r')
         ax_right.plot(tcs,update_cs/max(abs(update_cs)),color='r',ls='--')
         ax_right.plot(tcd,cd/max(abs(cd)),color='k')
@@ -422,34 +476,35 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
         ax_left.plot(t,roll(s,int(samp*(del_t))),color='r',ls='--')
         ax_left.plot(t,roll(s,int(samp*(del_t+1))),color='b',ls='--',alpha=0.3)
         ax_left.plot(t,roll(s,int(samp*(del_t-1))),color='g',ls='--',alpha=0.3)
-        ax_left.set_xlabel('Time (s)')
-        ax_right.set_xlabel('Time (s)')
+
         ax_bot.axvline(time,color='k')
-        #ax_bot.axvspan(itime+synth_tr.stats.o-(2./args.fmin),itime+synth_tr.stats.o-30,color='b',alpha=0.3)
         ax_bot.axvspan(d_st+itime+d_o-(2./args.fmin),
                        d_st+itime+d_o-30,color='b',alpha=0.3)
         ax_bot.axvspan(time+synth_tr.stats.o+window_tuple[0],
-                    time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
-        ax_full.axvspan(itime+synth_tr.stats.o-(2./args.fmin),
-                        itime+synth_tr.stats.o-30,color='b',alpha=0.3)
-        ax_full.axvspan(time+synth_tr.stats.o+window_tuple[0],
-                    time+synth_tr.stats.o+window_tuple[1],color='k',alpha=0.2)
+                       time+synth_tr.stats.o+window_tuple[1],
+                       color='k',alpha=0.2)
+        ax_bot.plot(td_full,data_tr.data,color='k')
+        ax_bot.plot(ts_full,synth_tr.data,color='r')
+        ax_bot.set_xlim(time+synth_tr.stats.o-400,time+synth_tr.stats.o+400)
+        ax_bot.set_ylim(data_tr.data.min()*1.4,data_tr.data.max()*1.4)
+
         for ii in ds_time:
-            #ax_bot.axvline(ii.time,color='k')
             ax_bot.text(ii.time,0,ii.name)
         ax_bot.axvline(dp_time,color='k')
 
-        ax_left.set_title('{} Lat:{} Lon:{} H:{}km Mw {}'.format(str(synth_tr.stats.starttime),
-                                                       str(round(data_tr.stats.evla)),
-                                                       str(round(data_tr.stats.evlo)),
-                                                       str(round(data_tr.stats.evdp)),
-                                                       str(round(data_tr.stats.mag))))
-        ax_right.set_title('Net: {} Stat: {} stla: {} stlo: {} Az: {} Gcarc: {}'.format(data_tr.stats.network,
-                                                       data_tr.stats.station,
-                                                       str(round(data_tr.stats.stla)),
-                                                       str(round(data_tr.stats.stlo)),
-                                                       str(round(data_tr.stats.az)),
-                                                       str(round(data_tr.stats.gcarc))))
+        ax_left.set_title('{} Lat:{} Lon:{} H:{}km Mw {}'.format(
+                          str(synth_tr.stats.starttime),
+                          str(round(data_tr.stats.evla)),
+                          str(round(data_tr.stats.evlo)),
+                          str(round(data_tr.stats.evdp)),
+                          str(round(data_tr.stats.mag))))
+        ax_right.set_title('Net: {} Stat: {} stla: {} stlo: {} Az: {} Gcarc: {}'.\
+                           format(data_tr.stats.network,
+                                  data_tr.stats.station,
+                                  str(round(data_tr.stats.stla)),
+                                  str(round(data_tr.stats.stlo)),
+                                  str(round(data_tr.stats.az)),
+                                  str(round(data_tr.stats.gcarc))))
 
         clicks = ClickSelect()
         fig = plt.gcf()
@@ -463,19 +518,24 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
             fig.set_facecolor('limegreen')
 
         plt.figtext(0.1,0.95,'press ctrl to save')
-        plt.figtext(0.15,0.30,'M1: {}\nM2: {}\nS/D: {}\nSNR_max: {}\nSNR_mean: {}\nLSQ: {}'\
-                    .format(m1,m2,amp_rat,SNR[0],SNR[1],lsq),size=15)
+        plt.figtext(0.15,0.30,'M1: {}\nM2: {}\nS/D: {}\nSNR_max: {}\nSNR_mean: {}\nLSQ_1: {}\nLSQ_2: {}'
+                    .format(m1,m2,amp_rat,SNR[0],SNR[1],lsq[0],lsq[1]),size=12)
 
-        plt.figtext(0.40,0.55,'del_t: {}s\nupdate: {}s\nfinal_t: {}s\ncorr:{}\nupdate_corr: {}'\
-                    .format(del_t,update_t,del_t+update_t,corcoeft[0],corcoeft[1]),size=15)
+        plt.figtext(0.37,0.55,'del_t: {}s\nupdate: {}s\nfinal_t: {}s\ncorr1:{}\ncorr2: {}'\
+                    .format(del_t,update_t,del_t+update_t,corcoeft[0],corcoeft[1]),size=12)
         plt.figtext(0.54,0.51,'R_rat: {}\nL_rat: {}\n'\
-                    .format(right_rat,left_rat),size=15)
+                    .format(right_rat,left_rat),size=12)
         plt.show()
         key = clicks.key
     else:
         key = 'control'
 
-    return tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t+update_t,key,SNR,amp_rat,left_rat,right_rat,lsq
+    return key,tobs,corcoeft,m1,m2,\
+           update_m1,update_m2,\
+           s_amp,d_amp,lsq,\
+           del_t,update_t,\
+           SNR,amp_rat,\
+           left_rat,right_rat\
 
 def read_streams(data_pickle,synth_pickle):
     sts = obspy.read(synth_pickle)

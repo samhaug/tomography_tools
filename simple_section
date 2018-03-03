@@ -23,7 +23,7 @@ import argparse
 def main():
     parser = argparse.ArgumentParser(
                        description='Measure and record traveltime delays')
-    parser.add_argument('-st','--stream',metavar='N',type=str,
+    parser.add_argument('-s','--stream',metavar='N',type=str,
                         help='Path to streams')
     parser.add_argument('-p','--phase',metavar='N',type=str,
                         help='Name of phase',default=False)
