@@ -32,6 +32,19 @@ def main():
                         default=180,help='maximum_distance (deg)')
     parser.add_argument('-s','--min_dist',metavar='float',type=float,
                         default=0,help='minimum distance (deg)')
+    parser.add_argument('--min_c1',metavar='float',type=float,
+                        default=0.5,help='minimum corcoeft_1 allowed')
+    parser.add_argument('--min_c2',metavar='float',type=float,
+                        default=0.75,help='minimum corcoeft_2 allowed')
+    parser.add_argument('--min_lsq1',metavar='float',type=float,
+                        default=0.5,help='minimum lsq_1 allowed')
+    parser.add_argument('--min_lsq2',metavar='float',type=float,
+                        default=0.75,help='minimum lsq_2 allowed')
+    parser.add_argument('--max_dt',metavar='float',type=float,
+                        default=30.0,help='maximum delta_T')
+    parser.add_argument('--dt_shift',metavar='bool',type=bool,
+                        default=True,help='mandate updated time shift be less\
+                                           than original')
 
     args = parser.parse_args()
     fig,ax = plt.subplots()
@@ -44,8 +57,7 @@ def main():
     s10_total = 0
     s20_total = 0
     s40_total = 0
-    sdiff15_total = 0
-    sdiff30_total = 0
+    sdiff20_total = 0
     for ii in dat_list:
         print ii
         h5f = h5py.File(ii,'r',driver='core')
@@ -53,15 +65,14 @@ def main():
         s10_total += list_plot(h5f,m,s10_total,'S10',args)
         s20_total += list_plot(h5f,m,s20_total,'S20',args)
         s40_total += list_plot(h5f,m,s40_total,'S40',args)
-        sdiff15_total += list_plot(h5f,m,sdiff15_total,'Sdiff15',args)
-        sdiff30_total += list_plot(h5f,m,sdiff30_total,'Sdiff30',args)
-    print 's5 total: ', s5_total
-    print 's10 total: ', s10_total
-    print 's20 total: ', s20_total
-    print 's40 total: ', s40_total
-    print 'sdiff15 total: ', sdiff15_total
-    print 'sdiff30 total: ', sdiff30_total
+        sdiff20_total += list_plot(h5f,m,sdiff20_total,'Sdiff20',args)
+    print 'S5 total: ', s5_total
+    print 'S10 total: ', s10_total
+    print 'S20 total: ', s20_total
+    print 'S40 total: ', s40_total
+    print 'Sdiff20 total: ', sdiff20_total
     plt.tight_layout()
+    plt.savefig('S.png')
     plt.show()
 
 def list_plot(h5f,m,total,name,args):
@@ -69,21 +80,46 @@ def list_plot(h5f,m,total,name,args):
         s_dat = h5f[name]['pick_info'][:]
     except KeyError:
         return 0
-    s_del = np.array([float(ii) for ii in s_dat[:,11]])
+    pick_count = 0
+    del_t = np.array([float(ii) for ii in s_dat[:,11]])
+    update_t = np.array([float(ii) for ii in s_dat[:,12]])
+    t_shift = del_t+update_t
+    corcoeft_1 = np.array([float(ii) for ii in s_dat[:,17]])
+    corcoeft_2 = np.array([float(ii) for ii in s_dat[:,18]])
+    lsq_1 = np.array([float(ii) for ii in s_dat[:,23]])
+    lsq_2 = np.array([float(ii) for ii in s_dat[:,24]])
     slat = np.array([float(ii) for ii in s_dat[:,2]])
     slon = np.array([float(ii) for ii in s_dat[:,3]])
     rlat = np.array([float(ii) for ii in s_dat[:,4]])
     rlon = np.array([float(ii) for ii in s_dat[:,5]])
     gcarc = np.array([float(ii) for ii in s_dat[:,6]])
-    #print 'Measurements: ', len(s_del)
     for ii in range(len(slat)):
-        if gcarc[ii] <= args.max_dist and gcarc[ii] >= args.min_dist:
-            plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],s_del[ii])
-        else:
+        if gcarc[ii] >= args.max_dist or gcarc[ii] <= args.min_dist:
+            #print 'gcarc'
             continue
+        if args.dt_shift:
+            if np.abs(del_t[ii]) < np.abs(update_t[ii]):
+                #print del_t[ii],update_t[ii]
+                #print 'dt_shift'
+                continue
+        if corcoeft_1[ii] < args.min_c1 or corcoeft_2[ii] < args.min_c2:
+            #print 'corcoeft'
+            #print corcoeft_1[ii],corcoeft_2[ii]
+            continue
+        if lsq_1[ii] < args.min_lsq1 or lsq_2[ii] < args.min_lsq2:
+            #print 'lsq'
+            #print lsq_1[ii],lsq_2[ii]
+            continue
+        if t_shift[ii] > args.max_dt:
+            #print 'tshift'
+            continue
+        else:
+            plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],t_shift[ii])
+            pick_count += 1
+
     lon,lat = m(slon[0],slat[0])
-    m.scatter(lon,lat,color='k',s=80,marker='D')
-    return len(s_del)
+    m.scatter(lon,lat,color='k',s=80,marker='D',rasterized=True)
+    return pick_count
 
 def plot_coords(m,slat,slon,rlat,rlon,del_t):
     stlo,stla = m(rlon,rlat)
@@ -115,7 +151,7 @@ def plot_coords(m,slat,slon,rlat,rlon,del_t):
         marker = 'x'
         facecolor='red'
     m.scatter(lon,lat,linewidth=1,color=color,alpha=0.6,
-              s=1.5*size,marker=marker,facecolor=facecolor)
+              s=1.5*size,marker=marker,facecolor=facecolor,rasterized=True)
 
 main()
 

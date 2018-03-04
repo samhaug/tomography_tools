@@ -43,13 +43,16 @@ def main():
                         help='Path to synthetic pickle')
     parser.add_argument('--plot',dest='plot',
                         action='store_true',help='Plot waveforms')
+    parser.add_argument('-e','--stride',type=int,
+                        default=1,help='stride of stream')
 
     h5f_name = getcwd().split('/')[-1]+'.picks.h5'
     h5f = h5py.File(h5f_name,'a',driver='core')
     args = parser.parse_args()
     std_in,sts_in = read_streams(args.data,args.synth)
-    print len(std_in)
-    print len(sts_in)
+    print len(std_in[::args.stride])
+    print len(sts_in[::args.stride])
+    std_in,sts_in = even_traces(std_in,sts_in)
 
     if std_in[0].stats.channel.endswith('T'):
         phase_list = ['S','S','S','S',
@@ -58,7 +61,7 @@ def main():
                       'Sdiff']
         fmax_list = [1./5,1./10,1./20,1./40,
                      1./20,1./30,
-                     1./10,1./15,1./20,
+                     1./10,1./15,1./15,
                      1./20]
         group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
                       range(len(phase_list))]
@@ -66,29 +69,28 @@ def main():
         if std_in[0].stats.evdp > 300:
             phase_list.append('sS')
             fmax_list.append(1./15)
-        fmin_list = [1./100]*len(phase_list)
-        w_list = [2.0/i for i in fmax_list]
+        fmin_list = [1./110]*len(phase_list)
+        w_list = [3.0/i for i in fmax_list]
 
     elif std_in[0].stats.channel.endswith('R'):
         phase_list = ['SKS','SKKS']
         fmax_list = [1./15,1./15]
         group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
                       range(len(phase_list))]
-        fmin_list = [1./100]*len(phase_list)
-        w_list = [2.0/i for i in fmax_list]
+        fmin_list = [1./110]*len(phase_list)
+        w_list = [3.0/i for i in fmax_list]
 
     elif std_in[0].stats.channel.endswith('Z'):
         phase_list = ['P','P','P','P',
                       'PP','PPP',
                       'Pdiff',]
-        fmax_list = [1./35,1./5,1./10,1./20,1./40,
-                     1./20,1./30,
-                     1./20
-                     ]
+        fmax_list = [1./5,1./10,1./20,1./40,
+                     1./20,1./25,
+                     1./20]
         group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
                       range(len(phase_list))]
-        fmin_list = [1./100]*len(phase_list)
-        w_list = [2.0/i for i in fmax_list]
+        fmin_list = [1./110]*len(phase_list)
+        w_list = [3.0/i for i in fmax_list]
 
     for jdx in range(len(phase_list)):
         print 'Working on phase: '+phase_list[jdx]
@@ -127,10 +129,10 @@ def main():
                           'az',
                           'evdp',
                           'mag',
-                          'tobs','del_t','update_t'
+                          'tobs','del_t','update_t',
                           'm1','m2',
                           'update_m1','update_m2',
-                          'corcoeft_1','corcoeft_2'
+                          'corcoeft_1','corcoeft_2',
                           's_amp','d_amp',
                           'SNR_0','SNR_1',
                           'lsq_0','lsq_1',
@@ -140,9 +142,11 @@ def main():
         #write metadata_list to h5file
         h5f[group_name[jdx]].create_dataset('meta',
                              data=array(meta_data_list))
-        for idx,ii in enumerate(st_id):
+        for idx,ii in enumerate(st_id[::args.stride]):
             total = len(st_id)
             print ii,'{}%'.format(round(float(idx)/total*100.))
+            if std[ii].stats.name != sts[ii].stats.name:
+                print 'trace names misaligned'
             a = find_ttime(std[ii],sts[ii],[args.phase],
                            (-1*args.window,args.window),args.plot,args)
             if a == False:
@@ -184,8 +188,8 @@ def main():
             elif key == 'control':
                 info_list = [ii,
                              std[idx].stats.network+'_'+\
-                             std[idx].stats.station+'_'+\
-                             std[idx].stats.location,
+                               std[idx].stats.station+'_'+\
+                               std[idx].stats.location,
                              std[idx].stats.evla,
                              std[idx].stats.evlo,
                              std[idx].stats.stla,
@@ -221,6 +225,26 @@ def main():
         print '{} Proposed picks\n'.format(idx)
         print '{} Accepted picks\n'.format(i)
     h5f.close()
+
+def even_traces(st,sts):
+    dl = []
+    sl = []
+    for tr in st:
+        tr.stats.name = tr.stats.station+tr.stats.network+tr.stats.location
+        dl.append(tr.stats.name)
+    for tr in sts:
+        tr.stats.name = tr.stats.station+tr.stats.network+tr.stats.location
+        sl.append(tr.stats.name)
+    i = set(sl).intersection(set(dl))
+    for tr in sts:
+        if tr.stats.name not in i:
+            sts.remove(tr)
+    for tr in st:
+        if tr.stats.name not in i:
+            st.remove(tr)
+    sts.sort(['name'])
+    st.sort(['name'])
+    return st,sts
 
 def display_id(args):
     f = open(args.fname,'r').readlines()
@@ -285,8 +309,8 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                                   phase_list=phase)[0].time
 
     #Noise window
-    n3 = data_tr.slice(d_st+itime+d_o-(3./args.fmin),
-                       d_st+itime+d_o-(0.5/args.fmin)).data
+    n3 = data_tr.slice(d_st+itime+d_o-(4./args.fmin),
+                       d_st+itime+d_o-(1.0/args.fmin)).data
     #Data window
     d = data_tr.slice(d_st+time+d_o+window_tuple[0],
                       d_st+time+d_o+window_tuple[1]).data
