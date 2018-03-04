@@ -78,7 +78,7 @@ def main():
 def list_plot(h5f,m,total,name,args):
     try:
         s_dat = h5f[name]['pick_info'][:]
-    except KeyError:
+    except KeyError,IndexError:
         return 0
     pick_count = 0
     del_t = np.array([float(ii) for ii in s_dat[:,11]])
