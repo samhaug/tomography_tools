@@ -3,8 +3,8 @@
 '''
 ==============================================================================
 
-File Name : map_Sdiff
-Purpose : map Sdiff traveltimes from h5 data_file
+File Name : map_SS
+Purpose : map SS traveltimes from h5 data_file
 Creation Date : 12-09-2017
 Last Modified : Mon 18 Sep 2017 04:43:24 PM EDT
 Created By : Samuel M. Haugland
@@ -25,7 +25,7 @@ from glob import glob
 
 def main():
     parser = argparse.ArgumentParser(
-                       description='map S times')
+                       description='map SS times')
     parser.add_argument('-f','--h5_files',metavar='*picks.h5',type=str,
                         help='list of h5_files')
     parser.add_argument('-l','--max_dist',metavar='float',type=float,
@@ -53,43 +53,19 @@ def main():
     m.drawparallels(np.arange(-90.,120.,30.))
     m.drawmeridians(np.arange(0.,360.,60.))
     m.drawcoastlines()
-    s5_total = 0
-    s10_total = 0
-    s20_total = 0
-    s40_total = 0
-    sdiff20_total = 0
+    SS20_total = 0
     for ii in dat_list:
         print ii
         h5f = h5py.File(ii,'r',driver='core')
         try:
-            s5_total += list_plot(h5f,m,s5_total,'S5',args)
+            SS20_total += list_plot(h5f,m,SS20_total,'SS20',args)
         except IndexError:
-            s5_total += 0
-        try:
-            s10_total += list_plot(h5f,m,s10_total,'S10',args)
-        except IndexError:
-            s10_total += 0
-        try:
-            s20_total += list_plot(h5f,m,s20_total,'S20',args)
-        except IndexError:
-            s20_total += 0
-        try:
-            s40_total += list_plot(h5f,m,s40_total,'S40',args)
-        except IndexError:
-            s40_total += 0
-        try:
-            sdiff20_total += list_plot(h5f,m,sdiff20_total,'Sdiff20',args)
-        except IndexError:
-            sdiff20_total += 0
+            SS20_total += 0
             continue
 
-    print 'S5 total: ', s5_total
-    print 'S10 total: ', s10_total
-    print 'S20 total: ', s20_total
-    print 'S40 total: ', s40_total
-    print 'Sdiff20 total: ', sdiff20_total
+    print 'SS20 total: ', SS20_total
     plt.tight_layout()
-    plt.savefig('S.png')
+    plt.savefig('SS.png')
     plt.show()
 
 def list_plot(h5f,m,total,name,args):

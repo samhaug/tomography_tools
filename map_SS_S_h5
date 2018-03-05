@@ -3,8 +3,8 @@
 '''
 ==============================================================================
 
-File Name : map_Sdiff
-Purpose : map Sdiff traveltimes from h5 data_file
+File Name : map_SS_S
+Purpose : map SS-S traveltimes from h5 data_file
 Creation Date : 12-09-2017
 Last Modified : Mon 18 Sep 2017 04:43:24 PM EDT
 Created By : Samuel M. Haugland
@@ -31,7 +31,7 @@ def main():
     parser.add_argument('-l','--max_dist',metavar='float',type=float,
                         default=180,help='maximum_distance (deg)')
     parser.add_argument('-s','--min_dist',metavar='float',type=float,
-                        default=0,help='minimum distance (deg)')
+                        default=40,help='minimum distance (deg)')
     parser.add_argument('--min_c1',metavar='float',type=float,
                         default=0.5,help='minimum corcoeft_1 allowed')
     parser.add_argument('--min_c2',metavar='float',type=float,
@@ -39,7 +39,7 @@ def main():
     parser.add_argument('--min_lsq1',metavar='float',type=float,
                         default=0.5,help='minimum lsq_1 allowed')
     parser.add_argument('--min_lsq2',metavar='float',type=float,
-                        default=0.75,help='minimum lsq_2 allowed')
+                        default=0.70,help='minimum lsq_2 allowed')
     parser.add_argument('--max_dt',metavar='float',type=float,
                         default=30.0,help='maximum delta_T')
     parser.add_argument('--dt_shift',metavar='bool',type=bool,
@@ -53,86 +53,110 @@ def main():
     m.drawparallels(np.arange(-90.,120.,30.))
     m.drawmeridians(np.arange(0.,360.,60.))
     m.drawcoastlines()
-    s5_total = 0
     s10_total = 0
     s20_total = 0
-    s40_total = 0
     sdiff20_total = 0
     for ii in dat_list:
         print ii
         h5f = h5py.File(ii,'r',driver='core')
         try:
-            s5_total += list_plot(h5f,m,s5_total,'S5',args)
-        except IndexError:
-            s5_total += 0
-        try:
             s10_total += list_plot(h5f,m,s10_total,'S10',args)
         except IndexError:
+            print 's10_index'
             s10_total += 0
         try:
             s20_total += list_plot(h5f,m,s20_total,'S20',args)
         except IndexError:
+            print 's20_index'
             s20_total += 0
-        try:
-            s40_total += list_plot(h5f,m,s40_total,'S40',args)
-        except IndexError:
-            s40_total += 0
         try:
             sdiff20_total += list_plot(h5f,m,sdiff20_total,'Sdiff20',args)
         except IndexError:
+            print 'sdiff_index'
             sdiff20_total += 0
             continue
 
-    print 'S5 total: ', s5_total
-    print 'S10 total: ', s10_total
-    print 'S20 total: ', s20_total
-    print 'S40 total: ', s40_total
-    print 'Sdiff20 total: ', sdiff20_total
+    print 'SS20-S10 total: ', s10_total
+    print 'SS20-S20 total: ', s20_total
+    print 'SS20-Sdiff20 total: ', sdiff20_total
     plt.tight_layout()
-    plt.savefig('S.png')
+    plt.savefig('SS-S.png')
     plt.show()
 
 def list_plot(h5f,m,total,name,args):
     try:
         s_dat = h5f[name]['pick_info'][:]
-        pick_count = 0
-        del_t = np.array([float(ii) for ii in s_dat[:,11]])
-        update_t = np.array([float(ii) for ii in s_dat[:,12]])
-        t_shift = del_t+update_t
-        corcoeft_1 = np.array([float(ii) for ii in s_dat[:,17]])
-        corcoeft_2 = np.array([float(ii) for ii in s_dat[:,18]])
-        lsq_1 = np.array([float(ii) for ii in s_dat[:,23]])
-        lsq_2 = np.array([float(ii) for ii in s_dat[:,24]])
-        slat = np.array([float(ii) for ii in s_dat[:,2]])
-        slon = np.array([float(ii) for ii in s_dat[:,3]])
-        rlat = np.array([float(ii) for ii in s_dat[:,4]])
-        rlon = np.array([float(ii) for ii in s_dat[:,5]])
-        gcarc = np.array([float(ii) for ii in s_dat[:,6]])
+        ss_dat = h5f['SS20']['pick_info'][:]
+        s_name = s_dat[:,1]
+        ss_name = ss_dat[:,1]
+
+        c = np.array(list(set(s_name).intersection(set(ss_name))))
+        s_mask = np.in1d(s_dat[:,1],c)
+        ss_mask = np.in1d(ss_dat[:,1],c)
+
+        slat = np.array([float(ii) for ii in s_dat[s_mask,2]])
+        slon = np.array([float(ii) for ii in s_dat[s_mask,3]])
+        rlat = np.array([float(ii) for ii in s_dat[s_mask,4]])
+        rlon = np.array([float(ii) for ii in s_dat[s_mask,5]])
+        gcarc = np.array([float(ii) for ii in s_dat[s_mask,6]])
+
+        S_del_t = np.array([float(ii) for ii in s_dat[s_mask,11]])
+        S_update_t = np.array([float(ii) for ii in s_dat[s_mask,12]])
+        S_t_shift = S_del_t+S_update_t
+        S_corcoeft_1 = np.array([float(ii) for ii in s_dat[s_mask,17]])
+        S_corcoeft_2 = np.array([float(ii) for ii in s_dat[s_mask,18]])
+        S_lsq_1 = np.array([float(ii) for ii in s_dat[s_mask,23]])
+        S_lsq_2 = np.array([float(ii) for ii in s_dat[s_mask,24]])
+
+        SS_del_t = np.array([float(ii) for ii in ss_dat[ss_mask,11]])
+        SS_update_t = np.array([float(ii) for ii in ss_dat[ss_mask,12]])
+        SS_t_shift = SS_del_t+SS_update_t
+        SS_corcoeft_1 = np.array([float(ii) for ii in ss_dat[ss_mask,17]])
+        SS_corcoeft_2 = np.array([float(ii) for ii in ss_dat[ss_mask,18]])
+        SS_lsq_1 = np.array([float(ii) for ii in ss_dat[ss_mask,23]])
+        SS_lsq_2 = np.array([float(ii) for ii in ss_dat[ss_mask,24]])
+
+        time_diff = SS_t_shift-S_t_shift
+
     except KeyError,IndexError:
         return 0
 
+    pick_count = 0
     for ii in range(len(slat)):
         if gcarc[ii] >= args.max_dist or gcarc[ii] <= args.min_dist:
             #print 'gcarc'
             continue
         if args.dt_shift:
-            if np.abs(del_t[ii]) < np.abs(update_t[ii]):
-                #print del_t[ii],update_t[ii]
-                #print 'dt_shift'
+            if np.abs(S_del_t[ii]) < np.abs(S_update_t[ii]):
+                #print 'S update'
                 continue
-        if corcoeft_1[ii] < args.min_c1 or corcoeft_2[ii] < args.min_c2:
-            #print 'corcoeft'
+            if np.abs(SS_del_t[ii]) < np.abs(SS_update_t[ii]):
+                #print 'SS update'
+                continue
+        if S_corcoeft_1[ii] < args.min_c1 or S_corcoeft_2[ii] < args.min_c2:
+            #print 'S corcoeft'
             #print corcoeft_1[ii],corcoeft_2[ii]
             continue
-        if lsq_1[ii] < args.min_lsq1 or lsq_2[ii] < args.min_lsq2:
-            #print 'lsq'
+        if SS_corcoeft_1[ii] < args.min_c1 or SS_corcoeft_2[ii] < args.min_c2:
+            #print 'SS corcoeft'
+            #print corcoeft_1[ii],corcoeft_2[ii]
+            continue
+        if S_lsq_1[ii] < args.min_lsq1 or S_lsq_2[ii] < args.min_lsq2:
+            #print 'S lsq'
             #print lsq_1[ii],lsq_2[ii]
             continue
-        if t_shift[ii] > args.max_dt:
-            #print 'tshift'
+        if SS_lsq_1[ii] < args.min_lsq1 or SS_lsq_2[ii] < args.min_lsq2:
+            #print 'SS lsq'
+            #print lsq_1[ii],lsq_2[ii]
+            continue
+        if S_t_shift[ii] > args.max_dt:
+            #print 'S_tshift'
+            continue
+        if SS_t_shift[ii] > args.max_dt:
+            #print 'SS_tshift'
             continue
         else:
-            plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],t_shift[ii])
+            plot_coords(m,slat[ii],slon[ii],rlat[ii],rlon[ii],time_diff[ii])
             pick_count += 1
 
     lon,lat = m(slon[0],slat[0])
