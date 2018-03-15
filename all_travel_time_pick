@@ -45,6 +45,8 @@ def main():
                         action='store_true',help='Plot waveforms')
     parser.add_argument('-e','--stride',type=int,
                         default=1,help='stride of stream')
+    parser.add_argument('--problem',type=str,
+                        default=False,help='file of problem names')
 
     h5f_name = getcwd().split('/')[-1]+'.picks.h5'
     h5f = h5py.File(h5f_name,'a',driver='core')
@@ -142,7 +144,14 @@ def main():
         #write metadata_list to h5file
         h5f[group_name[jdx]].create_dataset('meta',
                              data=array(meta_data_list))
+        problem = []
+        if args.problem != False:
+            pf = open(args.problem,'r').read().strip().split('\n')
         for idx,ii in enumerate(st_id[::args.stride]):
+            if args.problem != False:
+                if std[idx].stats.network+'_'+std[idx].stats.station+'_'+\
+                    std[idx].stats.location not in pf:
+                    continue
             total = len(st_id)
             print ii,'{}%'.format(round(float(idx)/total*100.))
             if std[ii].stats.name != sts[ii].stats.name:
@@ -172,18 +181,24 @@ def main():
             if nan_to_num(amp_rat) < 0.1 or nan_to_num(amp_rat) > 10:
                 print('amplitudes off x10')
                 continue
-            if nan_to_num(SNR[0]) < 2.0 or nan_to_num(SNR[0]) > 15000:
+            elif nan_to_num(SNR[0]) < 2.0 or nan_to_num(SNR[0]) > 15000:
                 print('SNR < 2 or error')
                 continue
-            if nan_to_num(max(corcoeft)) < 0.60:
+            elif corcoeft[0] > corcoeft[1]:
+                print('corcoeft lowered')
+                continue
+            elif lsq[0] > lsq[1]:
+                print('lsq lowered')
+                continue
+            elif nan_to_num(max(corcoeft)) < 0.60:
                 print('corcoeft < 0.5')
                 continue
-            if nan_to_num(max(lsq)) < 0.60:
+            elif nan_to_num(max(lsq)) < 0.60:
                 print('lsq < 0.5')
                 continue
-            if key == 'escape':
+            elif key == 'escape':
                 break
-            if key == 'alt':
+            elif key == 'alt':
                 continue
             elif key == 'control':
                 info_list = [ii,

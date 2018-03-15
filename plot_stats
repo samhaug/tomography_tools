@@ -1,0 +1,106 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : plot_stats.py
+Purpose : plot_statistics of traveltime picks
+Creation Date : 14-03-2018
+Last Modified : Wed 14 Mar 2018 03:42:48 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+import numpy as np
+from matplotlib import pyplot as plt
+from subprocess import call
+from os import listdir
+import h5py
+import obspy
+import argparse
+from glob import glob
+
+def main():
+    parser = argparse.ArgumentParser(
+                       description='map stats')
+    parser.add_argument('-f','--h5_files',metavar='*picks.h5',type=str,
+                        help='list of h5_files')
+    args = parser.parse_args()
+    dat_list = glob(args.h5_files)
+
+    fig,ax = plt.subplots(4,4,figsize=(10,10))
+    for i in range(0,3):
+        for j in range(0,4):
+            ax[i][j].get_xaxis().set_ticks([])
+
+    ax[0][0].set_title('S5')
+    ax[0][1].set_title('S10')
+    ax[0][2].set_title('S20')
+    ax[0][3].set_title('S40')
+    ax[1][0].set_title('SS20')
+    ax[1][1].set_title('SSS30')
+    ax[1][2].set_title('Sdiff20')
+    ax[1][3].set_title('ScS10')
+    ax[2][0].set_title('ScSScS15')
+    ax[2][1].set_title('ScSScSScS15')
+    ax[2][2].set_title('SKS15')
+    ax[2][3].set_title('SKKS15')
+    ax[3][0].set_title('P5')
+    ax[3][1].set_title('P10')
+    ax[3][2].set_title('P20')
+    ax[3][3].set_title('PP20')
+    for ii in ax.reshape(ax.size):
+        #x = np.linspace(0,10)
+        #ii.plot(x,x,color='k')
+        ii.set_xlim(0,1)
+        #ii.set_ylim(-1,1)
+
+    for ii in dat_list:
+        try:
+            f = h5py.File(ii,'r')
+            stat_plot(f,'S5',ax[0][0])
+            stat_plot(f,'S10',ax[0][1])
+            stat_plot(f,'S20',ax[0][2])
+            stat_plot(f,'S40',ax[0][3])
+            stat_plot(f,'SS20',ax[1][0])
+            stat_plot(f,'SSS30',ax[1][1])
+            stat_plot(f,'Sdiff20',ax[1][2])
+            stat_plot(f,'ScS10',ax[1][3])
+            stat_plot(f,'ScSScS15',ax[2][0])
+            stat_plot(f,'ScSScSScS15',ax[2][1])
+            stat_plot(f,'SKS15',ax[2][2])
+            stat_plot(f,'SKKS15',ax[2][3])
+            stat_plot(f,'P5',ax[3][0])
+            stat_plot(f,'P10',ax[3][1])
+            stat_plot(f,'P20',ax[3][2])
+            stat_plot(f,'PP20',ax[3][3])
+        except IOError:
+            continue
+    plt.show()
+
+def stat_plot(f,key,ax):
+    try:
+        p = f[key]['pick_info'][:]
+        c2 = np.array([float(i[18]) for i in p])
+        c1 = np.array([float(i[17]) for i in p])
+        l0 = np.array([float(i[23]) for i in p])
+        l1 = np.array([float(i[24]) for i in p])
+        t = np.array([float(i[11]) for i in p])
+        dt = np.array([float(i[12]) for i in p])
+        evdp = np.array([float(i[8]) for i in p])
+        mag = np.array([float(i[9]) for i in p])
+        right_rat = np.array([float(i[-1]) for i in p])
+        left_rat = np.array([float(i[-2]) for i in p])
+        amp_rat = np.array([float(i[-3]) for i in p])
+        #ax.scatter(c2-c1,l1-l0,alpha=0.01)
+        #ax.scatter(c2,left_rat/right_rat,alpha=0.01)
+        ax.scatter(c2,mag,alpha=0.01)
+        #if np.sum(c2)-np.sum(c1) <= 0:
+        #    print f,key
+        #ax.axvline(0,color='k',lw=0.5)
+        #ax.axhline(0,color='k',lw=0.5)
+    except KeyError:
+        return 0
+
+main()
