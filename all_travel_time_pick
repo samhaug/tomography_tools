@@ -24,6 +24,7 @@ import argparse
 from obspy.taup import TauPyModel
 import time
 import h5py
+from matplotlib.widgets import RadioButtons
 model = TauPyModel(model='iasp91')
 
 def main():
@@ -139,7 +140,7 @@ def main():
                           'SNR_0','SNR_1',
                           'lsq_0','lsq_1',
                           'amp_rat',
-                          'left_rat','right_rat',
+                          'left_rat','right_rat','terr'
                           ]
         #write metadata_list to h5file
         h5f[group_name[jdx]].create_dataset('meta',
@@ -177,6 +178,7 @@ def main():
                 amp_rat=a[13]
                 left_rat=a[14]
                 right_rat=a[15]
+                terr=a[16]
 
             if nan_to_num(amp_rat) < 0.1 or nan_to_num(amp_rat) > 10:
                 print('amplitudes off x10')
@@ -197,6 +199,7 @@ def main():
                 print('lsq < 0.5')
                 continue
             elif key == 'escape':
+                h5f.close()
                 break
             elif key == 'alt':
                 continue
@@ -221,7 +224,7 @@ def main():
                              SNR[0],SNR[1],
                              lsq[0],lsq[1],
                              amp_rat,
-                             left_rat,right_rat,
+                             left_rat,right_rat,terr
                              ]
                 phase_info_list.append([str(kk) for kk in info_list])
 
@@ -469,19 +472,39 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                 plt.close()
                 return True
 
-        gs = gridspec.GridSpec(50, 100)
+        gs = gridspec.GridSpec(50, 115)
+        rax = plt.subplot(gs[:,105::])
 
-        ax_bot = plt.subplot(gs[26:38,:])
+        def errfunc(label):
+            t_err_dict = {'0.0 s':0, '0.25 s':0.25,
+                         '0.5 s':0.5 ,'0.75 s':0.75,
+                         '1.0 s':1.0 ,'1.25 s':1.25,
+                         '1.5 s':1.5 ,'1.75 s':1.75,
+                         '2.0 s':2.0 ,'3.0 s':3.0,
+                         '4.0 s':4.0 ,'5.0 s':5.0}
+            terr = t_err_dict[label]
+
+        radio = RadioButtons(rax,('0.0 s','0.25 s',
+                                  '0.5 s','0.75 s',
+                                  '1.0 s','1.25 s',
+                                  '1.5 s','1.75 s',
+                                  '2.0 s','3.0 s',
+                                  '4.0 s','5.0 s',
+                                  ))
+        #radio.on_clicked(errfunc)
+        select = radio.value_selected
+
+        ax_bot = plt.subplot(gs[26:38,0:100])
         ax_bot.yaxis.set_ticklabels([])
 
-        ax_full = plt.subplot(gs[39:50,:])
+        ax_full = plt.subplot(gs[39:50,0:100])
         ax_full.yaxis.set_ticklabels([])
 
         ax_left = plt.subplot(gs[0:25,0:49])
         ax_left.yaxis.set_ticklabels([])
         ax_left.set_xlabel('Time (s)')
 
-        ax_right = plt.subplot(gs[0:25,51::])
+        ax_right = plt.subplot(gs[0:25,51:100])
         ax_right.yaxis.set_ticklabels([])
         ax_right.yaxis.set_ticklabels([])
         ax_right.set_xlabel('Time (s)')
@@ -566,15 +589,17 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                     .format(right_rat,left_rat),size=12)
         plt.show()
         key = clicks.key
+        terr = float(radio.value_selected.split()[0])
     else:
         key = 'control'
+        terr = 0
 
     return key,tobs,corcoeft,m1,m2,\
            update_m1,update_m2,\
            s_amp,d_amp,lsq,\
            del_t,update_t,\
            SNR,amp_rat,\
-           left_rat,right_rat\
+           left_rat,right_rat,terr
 
 def read_streams(data_pickle,synth_pickle):
     sts = obspy.read(synth_pickle)
