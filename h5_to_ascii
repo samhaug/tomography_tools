@@ -15,13 +15,14 @@ Created By : Samuel M. Haugland
 import numpy as np
 import h5py
 import argparse
+import re
 
 def main():
     parser = argparse.ArgumentParser(
                        description='Measure and record traveltime delays')
     parser.add_argument('-f','--file',metavar='H5 file',type=str,
                         help='name of h5 pick file')
-    parser.add_argument('-c','--coor',default=0.75,type=float,
+    parser.add_argument('-c','--coor',default=0.65,type=float,
                         help='minimum correlation coefficient')
     parser.add_argument('-l','--lsq',default=0.75,type=float,
                         help='minimum lsq value')
@@ -33,22 +34,34 @@ def main():
     out = args.file.split('.')[0]+'.dat'
 
     with open(out,'w') as f:
+        f.write('evla    evlo    evdp\n')
+        evla = float(h5['S40']['pick_info'][:][0,2])
+        evlo = float(h5['S40']['pick_info'][:][0,3])
+        evdp = float(h5['S40']['pick_info'][:][0,8])
+        f.write('{:3.3f} {:3.3f} {:3.3f}\n'.format(evla,evlo,evdp))
+        f.write('stla, stlo, gcarc, t_obs, del_t\n')
+        f.write('###############################\n')
         for keys in h5:
-            f.write(keys+'\n')
             try:
+                phase = filter(None,re.split(r'(\d+)',keys))
+                f.write('NEWPHASE {} {}s\n'.format(phase[0],phase[1]))
                 for ii in h5[keys]['pick_info'][:]:
                     if float(ii[18]) >= c and float(ii[24]) >= l:
-                        evla = ii[2]
-                        evlo = ii[3]
-                        stla = ii[4]
-                        stlo = ii[5]
-                        gcarc = ii[6]
-                        evdp = ii[8]
-                        tobs = ii[10]
-                        del_t = str(float(ii[11])+float(ii[12]))
-                        f.write('{} {} {} {} {} {} {} {}\n'.format(
-                                evla,evlo,stla,stlo,gcarc,evdp,tobs,del_t))
+                        #evla = float(ii[2])
+                        #evlo = float(ii[3])
+                        stla = float(ii[4])
+                        stlo = float(ii[5])
+                        gcarc = float(ii[6])
+                        #evdp = float(ii[8])
+                        tobs = float(ii[10])
+                        del_t = float(ii[11])+float(ii[12])
+                        f.write('{:6.3f} {:6.3f} {:6.3f} '
+                                '{:6.3f} {:6.3f}\n'.format(
+                                stla,stlo,gcarc,tobs,del_t))
             except KeyError:
                 continue
 
 main()
+
+
+
