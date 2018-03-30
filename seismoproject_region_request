@@ -5,62 +5,20 @@
 #
 #
 #
-
 date=$1
-
-if [ $2 == 1 ]; then
-    echo 'January'
-    min_date=$date-01-01
-    max_date=$date-02-01
-elif [ $2 == 2 ]; then
-    echo 'February'
-    min_date=$date-02-01
-    max_date=$date-03-01
-elif [ $2 == 3 ]; then
-    echo 'March'
-    min_date=$date-03-01
-    max_date=$date-04-01
-elif [ $2 == 4 ]; then
-    echo 'April'
-    min_date=$date-04-01
-    max_date=$date-05-01
-elif [ $2 == 5 ]; then
-    echo 'May'
-    min_date=$date-05-01
-    max_date=$date-06-01
-elif [ $2 == 6 ]; then
-    echo 'June'
-    min_date=$date-06-01
-    max_date=$date-07-01
-elif [ $2 == 7 ]; then
-    echo 'July'
-    min_date=$date-07-01
-    max_date=$date-08-01
-elif [ $2 == 8 ]; then
-    echo 'August'
-    min_date=$date-08-01
-    max_date=$date-09-01
-elif [ $2 == 9 ]; then
-    echo 'September'
-    min_date=$date-09-01
-    max_date=$date-10-01
-elif [ $2 == 10 ]; then
-    echo 'October'
-    min_date=$date-10-01
-    max_date=$date-11-01
-elif [ $2 == 11 ]; then
-    echo 'November'
-    min_date=$date-11-01
-    max_date=$date-12-01
-elif [ $2 == 12 ]; then
-    echo 'December'
-    min_date=$date-12-01
-    max_date=$date-12-31
-    #max_date=$(($date+1))-01-01
+min_date=$date-01-01
+max_date=$date-12-30
+if [ $2 == 'india' ]; then
+    echo 'Indian ocean '$date
+    event_rect=58/87/-37/0
+elif [ $2 == 'south_atlantic' ]; then
+    echo 'South atlantic ocean '$date
+    event_rect=-21/99/-58/-37
 fi
 
+
 min_depth=0
-max_depth=700
+max_depth=20
 preset=0
 offset=3600
 waveform_format='sac'
@@ -68,8 +26,8 @@ waveform_format='sac'
 event_catalog='GCMT_COMBO'
 #event_catalog='LOCAL'
 #read_catalog='/dept/geology/geo/home/tomo_project/UM_tomo_tools/event_catalog.txt'
-min_mag='6.2'
-max_mag='7.2'
+min_mag='5.6'
+max_mag='6.2'
 cha='BHE,BHN,BHZ,BH1,BH2'
 min_epi=2
 max_epi=180
@@ -90,6 +48,7 @@ MY_CMD="~/anaconda2/bin/obspyDMT
 --cha \"$cha\"
 --min_epi=$min_epi
 --max_epi=$max_epi
+--event_rect=$event_rect
 --waveform_format $waveform_format
 --event_catalog $event_catalog
 --event_based 

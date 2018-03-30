@@ -1,0 +1,20 @@
+[3J[H[2J--------------------------------------------------------------------------------
+		   obspyDMT (obspy Data Management Tool)
+
+	Python Toolbox for Retrieving, Processing and Management of
+			Large Seismological Datasets
+
+:copyright:
+The ObsPy Development Team (devs@obspy.org)
+
+Developed by Kasra Hosseini
+email: kasra.hosseinizad@earth.ox.ac.uk
+
+:license:
+GNU General Public License, Version 3
+(http://www.gnu.org/licenses/gpl-3.0-standalone.html)
+--------------------------------------------------------------------------------
+
+
+obspyDMT primary mode: event_based
+

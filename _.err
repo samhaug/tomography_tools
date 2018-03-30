@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/samhaug/anaconda2/bin/obspyDMT", line 11, in <module>
+    sys.exit(main())
+  File "/home/samhaug/anaconda2/lib/python2.7/site-packages/obspyDMT/obspyDMT.py", line 111, in main
+    input_dics = read_input_command(parser)
+  File "/home/samhaug/anaconda2/lib/python2.7/site-packages/obspyDMT/utils/input_handler.py", line 1025, in read_input_command
+    input_dics['min_date'] = str(UTCDateTime(options.min_date))
+  File "/home/samhaug/anaconda2/lib/python2.7/site-packages/obspy/core/utcdatetime.py", line 327, in __init__
+    dt = datetime.datetime(*args, **kwargs)
+TypeError: an integer is required
