@@ -321,6 +321,10 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                                        distance_in_degree=data_tr.stats.gcarc,
                                        phase_list=['tts'])[0].time
 
+    elif phase[0] == 'tts':
+        itime = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
+                                       distance_in_degree=data_tr.stats.gcarc,
+                                       phase_list=['tts'])[0].time
     #Find arrival time of phase in question
     time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
                                   distance_in_degree=data_tr.stats.gcarc,
@@ -446,7 +450,8 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
         left_rat = 0
 
     if plot == True:
-        if phase[0].startswith('S') or phase[0].startswith('sS'):
+        if phase[0].startswith('S') or phase[0].startswith('sS') or \
+           phase[0] == 'tts':
             ds_time = model.get_travel_times(source_depth_in_km=
                                        data_tr.stats.evdp,
                                        distance_in_degree=data_tr.stats.gcarc,
