@@ -455,10 +455,16 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
             ds_time = model.get_travel_times(source_depth_in_km=
                                        data_tr.stats.evdp,
                                        distance_in_degree=data_tr.stats.gcarc,
-                              phase_list=['S','SS','SSS','SKS','SKKS',
+                              phase_list=['S','SS','SSS',
                                          'sS','ScS','sScS','ScSScS','sScSScS'])
             dp_time = 0
-        if phase[0].startswith('P'):
+        elif phase[0].startswith('SK'):
+            ds_time = model.get_travel_times(source_depth_in_km=
+                                       data_tr.stats.evdp,
+                                       distance_in_degree=data_tr.stats.gcarc,
+                              phase_list=['S','SKS','SKKS'])
+            dp_time = 0
+        elif phase[0].startswith('P'):
             dp_time = model.get_travel_times(source_depth_in_km=
                                              data_tr.stats.evdp,
                               distance_in_degree=data_tr.stats.gcarc,
