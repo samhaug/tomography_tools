@@ -69,9 +69,9 @@ def main():
         group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
                       range(len(phase_list))]
 
-        if std_in[0].stats.evdp > 300:
-            phase_list.append('sS')
-            fmax_list.append(1./15)
+        #if std_in[0].stats.evdp > 300:
+        #    phase_list.append('sS')
+        #    fmax_list.append(1./15)
         fmin_list = [1./110]*len(phase_list)
         w_list = [3.0/i for i in fmax_list]
 
@@ -122,15 +122,14 @@ def main():
         st_id = range(0,len(std))
         i = 0
         phase_info_list = []
-        name_info_list = []
         meta_data_list = ['trace_#',
-                          'placeholder',
+                          'name',
                           'evla',
                           'evlo',
                           'stla',
                           'stlo',
                           'gcarc',
-                          'az', = []
+                          'az',
                           'evdp',
                           'mag',
                           'tobs','del_t','update_t',
@@ -205,11 +204,10 @@ def main():
             elif key == 'alt':
                 continue
             elif key == 'control':
-                name_info_list.append(
-                               [std[idx].stats.network,
-                               std[idx].stats.station,
-                               std[idx].stats.location])
-                info_list = [ii,0.0,
+                name_info = std[idx].stats.network+'_'+\
+                               std[idx].stats.station+'_'+\
+                               str(std[idx].stats.location)
+                info_list = [ii,name_info,
                              std[idx].stats.evla,
                              std[idx].stats.evlo,
                              std[idx].stats.stla,
@@ -228,8 +226,8 @@ def main():
                              amp_rat,
                              left_rat,right_rat,terr
                              ]
-                #phase_info_list.append([str(kk) for kk in info_list])
-                phase_info_list.append(info_list)
+                phase_info_list.append([str(kk) for kk in info_list])
+                #phase_info_list.append(info_list)
 
                 i += 1
             else:
@@ -239,8 +237,8 @@ def main():
 
         h5f[group_name[jdx]].create_dataset('pick_info',
                              data=array(phase_info_list))
-        h5f[group_name[jdx]].create_dataset('name_info',
-                             data=array(name_info_list))
+        #h5f[group_name[jdx]].create_dataset('name_info',
+        #                     data=array(name_info_list))
         then = time.time()
         rate = (len(std))/(then-now)
         print 'Total time: {} sec\n'.format(then-now)
@@ -331,10 +329,12 @@ def find_ttime(data_tr,synth_tr,phase,window_tuple,plot,args):
                                        distance_in_degree=data_tr.stats.gcarc,
                                        phase_list=['tts'])[0].time
     #Find arrival time of phase in question
-    time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
+    try:
+        time = model.get_travel_times(source_depth_in_km=data_tr.stats.evdp,
                                   distance_in_degree=data_tr.stats.gcarc,
                                   phase_list=phase)[0].time
-
+    except IndexError:
+        return False
     #Noise window
     n3 = data_tr.slice(d_st+itime+d_o-(4./args.fmin),
                        d_st+itime+d_o-(1.0/args.fmin)).data
@@ -758,78 +758,54 @@ def phase_info(phase_name):
 def phase_range(std,sts,phase_name):
     if phase_name == 'S' or phase_name == 'sS':
 
-        if sts[0].stats.evdp < 200:
+        if sts[0].stats.evdp =< 200:
             for tr in std:
-                if tr.stats.gcarc > 102.:
-                    std.remove(tr)
-                if tr.stats.gcarc < 20.:
+                if tr.stats.gcarc > 102. or tr.stats.gcarc < 20:
                     std.remove(tr)
             for tr in sts:
-                if tr.stats.gcarc > 102.:
-                    sts.remove(tr)
-                if tr.stats.gcarc < 20.:
+                if tr.stats.gcarc > 102. or tr.stats.gcarc < 20:
                     sts.remove(tr)
 
         elif sts[0].stats.evdp > 200 and sts[0].stats.evdp < 450:
             for tr in std:
-                if tr.stats.gcarc > 101.:
-                    std.remove(tr)
-                if tr.stats.gcarc < 20.:
+                if tr.stats.gcarc > 101. or tr.stats.gcarc < 20.:
                     std.remove(tr)
             for tr in sts:
-                if tr.stats.gcarc > 101.:
-                    sts.remove(tr)
-                if tr.stats.gcarc < 20.:
+                if tr.stats.gcarc > 101. or tr.stats.gcarc < 20.:
                     sts.remove(tr)
 
-        elif sts[0].stats.evdp > 450:
+        elif sts[0].stats.evdp >= 450:
             for tr in std:
-                if tr.stats.gcarc > 100:
-                    std.remove(tr)
-                if tr.stats.gcarc < 20.:
+                if tr.stats.gcarc > 100 or tr.stats.gcarc < 20.:
                     std.remove(tr)
             for tr in sts:
-                if tr.stats.gcarc > 100:
-                    sts.remove(tr)
-                if tr.stats.gcarc < 20.:
+                if tr.stats.gcarc > 100 or tr.stats.gcarc < 20.:
                     sts.remove(tr)
 
     if phase_name == 'Sdiff' or phase_name == 'sSdiff':
 
         if sts[0].stats.evdp < 200:
             for tr in std:
-                if tr.stats.gcarc > 155.:
-                    std.remove(tr)
-                if tr.stats.gcarc < 103.:
+                if tr.stats.gcarc > 155. or tr.stats.gcarc < 103.:
                     std.remove(tr)
             for tr in sts:
-                if tr.stats.gcarc > 155.:
-                    sts.remove(tr)
-                if tr.stats.gcarc < 103.:
+                if tr.stats.gcarc > 155. or tr.stats.gcarc < 103.:
                     sts.remove(tr)
 
         elif sts[0].stats.evdp > 200 and sts[0].stats.evdp < 450:
             for tr in std:
-                if tr.stats.gcarc > 155.:
-                    std.remove(tr)
-                if tr.stats.gcarc < 102.:
+                if tr.stats.gcarc > 155. or tr.stats.gcarc < 102.:
                     std.remove(tr)
             for tr in sts:
-                if tr.stats.gcarc > 155.:
-                    sts.remove(tr)
-                if tr.stats.gcarc < 102.:
+                if tr.stats.gcarc > 155. or tr.stats.gcarc < 102.:
                     sts.remove(tr)
 
         elif sts[0].stats.evdp > 450:
             for tr in std:
-                if tr.stats.gcarc > 155.:
-                    std.remove(tr)
-                if tr.stats.gcarc < 101.:
+                if tr.stats.gcarc > 155. or tr.stats.gcarc < 101.:
                     std.remove(tr)
             for tr in sts:
-                if tr.stats.gcarc > 155.:
-                    sts.remove(tr)
-                if tr.stats.gcarc < 101.:
+                if tr.stats.gcarc > 155. or tr.stats.gcarc < 101.:
                     sts.remove(tr)
 
     if phase_name == 'SS' or phase_name == 'sSS':
@@ -1067,6 +1043,7 @@ def phase_range(std,sts,phase_name):
                 sts.remove(tr)
 
     return std,sts
+
 
 def write_amp_header(phase_name,fmin,fmax):
     fname = '{}_{}_{}.dat'.format(getcwd().split('/')[-1],
