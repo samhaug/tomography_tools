@@ -751,40 +751,82 @@ def phase_info(phase_name):
     return branch_list
 
 def phase_range(std,sts,phase_name):
-    if phase_name == 'tts':
-
-        for tr in std:
-            if tr.stats.gcarc <= 95. or tr.stats.gcarc >= 105.:
-                std.remove(tr)
-        for tr in sts:
-            if tr.stats.gcarc <= 95. or tr.stats.gcarc >= 105.:
-                std.remove(tr)
 
     if phase_name == 'S' or phase_name == 'sS':
 
-        for tr in std:
-            if tr.stats.gcarc > 95.:
-                std.remove(tr)
-            if tr.stats.gcarc < 27.:
-                std.remove(tr)
-        for tr in sts:
-            if tr.stats.gcarc > 95.:
-                sts.remove(tr)
-            if tr.stats.gcarc < 27.:
-                sts.remove(tr)
+        if sts[0].stats.evdp < 200:
+            for tr in std:
+                if tr.stats.gcarc > 102.:
+                    std.remove(tr)
+                if tr.stats.gcarc < 20.:
+                    std.remove(tr)
+            for tr in sts:
+                if tr.stats.gcarc > 102.:
+                    sts.remove(tr)
+                if tr.stats.gcarc < 20.:
+                    sts.remove(tr)
+
+        elif sts[0].stats.evdp > 200 and sts[0].stats.evdp < 450:
+            for tr in std:
+                if tr.stats.gcarc > 101.:
+                    std.remove(tr)
+                if tr.stats.gcarc < 20.:
+                    std.remove(tr)
+            for tr in sts:
+                if tr.stats.gcarc > 101.:
+                    sts.remove(tr)
+                if tr.stats.gcarc < 20.:
+                    sts.remove(tr)
+
+        elif sts[0].stats.evdp > 450:
+            for tr in std:
+                if tr.stats.gcarc > 100:
+                    std.remove(tr)
+                if tr.stats.gcarc < 20.:
+                    std.remove(tr)
+            for tr in sts:
+                if tr.stats.gcarc > 100:
+                    sts.remove(tr)
+                if tr.stats.gcarc < 20.:
+                    sts.remove(tr)
 
     if phase_name == 'Sdiff' or phase_name == 'sSdiff':
 
-        for tr in std:
-            if tr.stats.gcarc > 150.:
-                std.remove(tr)
-            if tr.stats.gcarc < 105.:
-                std.remove(tr)
-        for tr in sts:
-            if tr.stats.gcarc > 150.:
-                sts.remove(tr)
-            if tr.stats.gcarc < 105.:
-                sts.remove(tr)
+        if sts[0].stats.evdp < 200:
+            for tr in std:
+                if tr.stats.gcarc > 155.:
+                    std.remove(tr)
+                if tr.stats.gcarc < 103.:
+                    std.remove(tr)
+            for tr in sts:
+                if tr.stats.gcarc > 155.:
+                    sts.remove(tr)
+                if tr.stats.gcarc < 103.:
+                    sts.remove(tr)
+
+        elif sts[0].stats.evdp > 200 and sts[0].stats.evdp < 450:
+            for tr in std:
+                if tr.stats.gcarc > 155.:
+                    std.remove(tr)
+                if tr.stats.gcarc < 102.:
+                    std.remove(tr)
+            for tr in sts:
+                if tr.stats.gcarc > 155.:
+                    sts.remove(tr)
+                if tr.stats.gcarc < 102.:
+                    sts.remove(tr)
+
+        elif sts[0].stats.evdp > 450:
+            for tr in std:
+                if tr.stats.gcarc > 155.:
+                    std.remove(tr)
+                if tr.stats.gcarc < 101.:
+                    std.remove(tr)
+            for tr in sts:
+                if tr.stats.gcarc > 155.:
+                    sts.remove(tr)
+                if tr.stats.gcarc < 101.:
+                    sts.remove(tr)
 
     if phase_name == 'SS' or phase_name == 'sSS':
 
@@ -798,26 +840,33 @@ def phase_range(std,sts,phase_name):
     if phase_name == 'SSS' or phase_name == 'sSSS':
 
         for tr in std:
-            if tr.stats.gcarc < 85.:
+            if tr.stats.gcarc < 75.:
                 std.remove(tr)
         for tr in sts:
-            if tr.stats.gcarc < 85.:
+            if tr.stats.gcarc < 75.:
+                sts.remove(tr)
+
+        for tr in std:
+            if tr.stats.gcarc > 90. and tr.stats.gcarc < 130:
+                std.remove(tr)
+        for tr in sts:
+            if tr.stats.gcarc > 90. and tr.stats.gcarc < 130:
                 sts.remove(tr)
 
     if phase_name == 'ScS' or phase_name == 'sScS':
 
         for tr in std:
             if tr.stats.evdp < 200:
-                if tr.stats.gcarc > 2. and tr.stats.gcarc < 25:
+                if tr.stats.gcarc > 2. and tr.stats.gcarc < 35:
                     continue
-                elif tr.stats.gcarc > 52 and tr.stats.gcarc < 70:
+                elif tr.stats.gcarc > 55 and tr.stats.gcarc < 70:
                     continue
                 else:
                     std.remove(tr)
             elif tr.stats.evdp > 200 and tr.stats.evdp < 400:
-                if tr.stats.gcarc > 2. and tr.stats.gcarc < 25:
+                if tr.stats.gcarc > 2. and tr.stats.gcarc < 30:
                     continue
-                elif tr.stats.gcarc > 52 and tr.stats.gcarc < 70:
+                elif tr.stats.gcarc > 55 and tr.stats.gcarc < 70:
                     continue
                 else:
                     std.remove(tr)
@@ -831,16 +880,16 @@ def phase_range(std,sts,phase_name):
 
         for tr in sts:
             if tr.stats.evdp < 200:
-                if tr.stats.gcarc > 2. and tr.stats.gcarc < 25:
+                if tr.stats.gcarc > 2. and tr.stats.gcarc < 35:
                     continue
-                elif tr.stats.gcarc > 52 and tr.stats.gcarc < 70:
+                elif tr.stats.gcarc > 55 and tr.stats.gcarc < 70:
                     continue
                 else:
                     sts.remove(tr)
             elif tr.stats.evdp > 200 and tr.stats.evdp < 400:
-                if tr.stats.gcarc > 2. and tr.stats.gcarc < 25:
+                if tr.stats.gcarc > 2. and tr.stats.gcarc < 30:
                     continue
-                elif tr.stats.gcarc > 52 and tr.stats.gcarc < 70:
+                elif tr.stats.gcarc > 55 and tr.stats.gcarc < 70:
                     continue
                 else:
                     sts.remove(tr)
