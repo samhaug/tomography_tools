@@ -6,7 +6,7 @@
 File Name : ttime_plot.py
 Purpose : ---
 Creation Date : 08-04-2018
-Last Modified : Mon 09 Apr 2018 10:04:26 AM EDT
+Last Modified : Mon 09 Apr 2018 11:24:47 AM EDT
 Created By : Samuel M. Haugland
 
 ==============================================================================
@@ -28,34 +28,68 @@ def main():
                         help='event depth')
     args = parser.parse_args()
     fig,ax = setup_figure()
+    for ii in np.arange(0,700,50):
+        plot_depth(ii,ax)
+    plt.show()
+    plt.savefig('ttime_plot.pdf')
+
+def plot_depth(evdp,ax):
+    print evdp
     s_list = []
     scs_list = []
     sdiff_list = []
-    for ii in np.linspace(10,180,num=170):
-        arr_S = model.get_travel_times(source_depth_in_km=args.evdp,
+    ss_list = []
+    sss_list = []
+    scs2_list = []
+    for ii in np.arange(10,180,1):
+        arr_SSS = model.get_travel_times(source_depth_in_km=evdp,
+                                       distance_in_degree=ii,
+                                       phase_list=['SSS'])
+        if len(arr_SSS) != 0:
+            sss_list.append((ii,arr_SSS[0].time))
+
+        arr_SS = model.get_travel_times(source_depth_in_km=evdp,
+                                       distance_in_degree=ii,
+                                       phase_list=['SS'])
+        if len(arr_SS) != 0:
+            ss_list.append((ii,arr_SS[0].time))
+
+        arr_S = model.get_travel_times(source_depth_in_km=evdp,
                                        distance_in_degree=ii,
                                        phase_list=['S'])
         if len(arr_S) != 0:
             s_list.append((ii,arr_S[0].time))
 
-        arr_Sdiff = model.get_travel_times(source_depth_in_km=args.evdp,
+        arr_Sdiff = model.get_travel_times(source_depth_in_km=evdp,
                                        distance_in_degree=ii,
                                        phase_list=['Sdiff'])
         if len(arr_Sdiff) != 0:
             sdiff_list.append((ii,arr_Sdiff[0].time))
 
-        arr_ScS = model.get_travel_times(source_depth_in_km=args.evdp,
+        arr_ScS = model.get_travel_times(source_depth_in_km=evdp,
                                        distance_in_degree=ii,
                                        phase_list=['ScS'])
         if len(arr_ScS) != 0:
             scs_list.append((ii,arr_ScS[0].time))
+
+        arr_ScS2 = model.get_travel_times(source_depth_in_km=evdp,
+                                       distance_in_degree=ii,
+                                       phase_list=['ScSScS'])
+        if len(arr_ScS2) != 0:
+            scs2_list.append((ii,arr_ScS2[0].time))
+
     s_list = np.array(s_list)
     scs_list = np.array(scs_list)
+    scs2_list = np.array(scs2_list)
     sdiff_list = np.array(sdiff_list)
-    ax.plot(s_list[:,0],s_list[:,1])
-    ax.plot(scs_list[:,0],scs_list[:,1])
-    ax.plot(sdiff_list[:,0],sdiff_list[:,1])
-    plt.show()
+    ss_list = np.array(ss_list)
+    sss_list = np.array(sss_list)
+    ax.plot(s_list[:,0],s_list[:,1],color='k')
+    ax.plot(scs_list[:,0],scs_list[:,1],color='b')
+    ax.plot(scs2_list[:,0],scs2_list[:,1],color='orange')
+    ax.plot(sdiff_list[:,0],sdiff_list[:,1],color='r')
+    ax.plot(ss_list[:,0],ss_list[:,1],color='g')
+    ax.plot(sss_list[:,0],sss_list[:,1],color='purple')
 
 def setup_figure():
     fig,ax = plt.subplots(figsize=(5,9))
