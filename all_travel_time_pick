@@ -61,11 +61,11 @@ def main():
         phase_list = ['S','S','S','S',
                       'SS','SSS',
                       'ScS','ScSScS','ScSScSScS',
-                      'Sdiff','tts']
+                      'Sdiff']
         fmax_list = [1./5,1./10,1./20,1./40,
                      1./20,1./30,
                      1./10,1./15,1./15,
-                     1./20,1./20]
+                     1./20]
         group_name = [phase_list[idx]+str(int(1./fmax_list[idx])) for idx in
                       range(len(phase_list))]
 
@@ -122,14 +122,15 @@ def main():
         st_id = range(0,len(std))
         i = 0
         phase_info_list = []
+        name_info_list = []
         meta_data_list = ['trace_#',
-                          'name',
+                          'placeholder',
                           'evla',
                           'evlo',
                           'stla',
                           'stlo',
                           'gcarc',
-                          'az',
+                          'az', = []
                           'evdp',
                           'mag',
                           'tobs','del_t','update_t',
@@ -204,10 +205,11 @@ def main():
             elif key == 'alt':
                 continue
             elif key == 'control':
-                info_list = [ii,
-                             std[idx].stats.network+'_'+\
-                               std[idx].stats.station+'_'+\
-                               std[idx].stats.location,
+                name_info_list.append(
+                               [std[idx].stats.network,
+                               std[idx].stats.station,
+                               std[idx].stats.location])
+                info_list = [ii,0.0,
                              std[idx].stats.evla,
                              std[idx].stats.evlo,
                              std[idx].stats.stla,
@@ -226,7 +228,8 @@ def main():
                              amp_rat,
                              left_rat,right_rat,terr
                              ]
-                phase_info_list.append([str(kk) for kk in info_list])
+                #phase_info_list.append([str(kk) for kk in info_list])
+                phase_info_list.append(info_list)
 
                 i += 1
             else:
@@ -236,6 +239,8 @@ def main():
 
         h5f[group_name[jdx]].create_dataset('pick_info',
                              data=array(phase_info_list))
+        h5f[group_name[jdx]].create_dataset('name_info',
+                             data=array(name_info_list))
         then = time.time()
         rate = (len(std))/(then-now)
         print 'Total time: {} sec\n'.format(then-now)
@@ -751,7 +756,6 @@ def phase_info(phase_name):
     return branch_list
 
 def phase_range(std,sts,phase_name):
-
     if phase_name == 'S' or phase_name == 'sS':
 
         if sts[0].stats.evdp < 200:
