@@ -758,7 +758,7 @@ def phase_info(phase_name):
 def phase_range(std,sts,phase_name):
     if phase_name == 'S' or phase_name == 'sS':
 
-        if sts[0].stats.evdp =< 200:
+        if sts[0].stats.evdp <= 200:
             for tr in std:
                 if tr.stats.gcarc > 102. or tr.stats.gcarc < 20:
                     std.remove(tr)
@@ -784,7 +784,7 @@ def phase_range(std,sts,phase_name):
 
     if phase_name == 'Sdiff' or phase_name == 'sSdiff':
 
-        if sts[0].stats.evdp < 200:
+        if sts[0].stats.evdp <= 200:
             for tr in std:
                 if tr.stats.gcarc > 155. or tr.stats.gcarc < 103.:
                     std.remove(tr)
@@ -800,7 +800,7 @@ def phase_range(std,sts,phase_name):
                 if tr.stats.gcarc > 155. or tr.stats.gcarc < 102.:
                     sts.remove(tr)
 
-        elif sts[0].stats.evdp > 450:
+        elif sts[0].stats.evdp >= 450:
             for tr in std:
                 if tr.stats.gcarc > 155. or tr.stats.gcarc < 101.:
                     std.remove(tr)
@@ -1043,7 +1043,6 @@ def phase_range(std,sts,phase_name):
                 sts.remove(tr)
 
     return std,sts
-
 
 def write_amp_header(phase_name,fmin,fmax):
     fname = '{}_{}_{}.dat'.format(getcwd().split('/')[-1],
