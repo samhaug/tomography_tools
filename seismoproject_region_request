@@ -16,7 +16,7 @@ elif [ $2 == 'south_atlantic' ]; then
     event_rect=-21/99/-58/-37
 elif [ $2 == 'mid_atlantic' ]; then
     echo 'mid atlantic ocean '$date
-    event_rect=60/2/-38/65
+    event_rect=-60/0/-38/65
 fi
 
 
