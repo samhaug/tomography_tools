@@ -6,7 +6,7 @@
 File Name : ttime_plot.py
 Purpose : ---
 Creation Date : 08-04-2018
-Last Modified : Mon 09 Apr 2018 11:24:47 AM EDT
+Last Modified : Wed 11 Apr 2018 04:56:45 PM EDT
 Created By : Samuel M. Haugland
 
 ==============================================================================
@@ -18,7 +18,7 @@ from subprocess import call
 from os import listdir
 import obspy
 from obspy.taup import TauPyModel
-model = TauPyModel(model='prem')
+model = TauPyModel(model='iasp91')
 import argparse
 
 def main():
@@ -28,7 +28,7 @@ def main():
                         help='event depth')
     args = parser.parse_args()
     fig,ax = setup_figure()
-    for ii in np.arange(0,700,50):
+    for ii in np.arange(0,750,50):
         plot_depth(ii,ax)
     plt.show()
     plt.savefig('ttime_plot.pdf')
@@ -41,7 +41,7 @@ def plot_depth(evdp,ax):
     ss_list = []
     sss_list = []
     scs2_list = []
-    for ii in np.arange(10,180,1):
+    for ii in np.arange(80,110,0.25):
         arr_SSS = model.get_travel_times(source_depth_in_km=evdp,
                                        distance_in_degree=ii,
                                        phase_list=['SSS'])
