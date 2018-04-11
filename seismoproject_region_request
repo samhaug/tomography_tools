@@ -14,6 +14,9 @@ if [ $2 == 'india' ]; then
 elif [ $2 == 'south_atlantic' ]; then
     echo 'South-atlantic ocean '$date
     event_rect=-21/+99/-58/-37
+elif [ $2 == 'south_pacific' ]; then
+    echo 'South-pacific ocean '$date
+    event_rect=-179/-84/-70/-35
 elif [ $2 == 'mid_atlantic' ]; then
     echo 'Mid-atlantic ocean '$date
     event_rect=-60/0/-38/+5
@@ -21,7 +24,7 @@ fi
 
 
 min_depth=0
-max_depth=20
+max_depth=50
 preset=0
 offset=3600
 waveform_format='sac'
