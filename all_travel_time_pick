@@ -679,105 +679,14 @@ def phase_info(phase_name):
 def phase_range(std_in,sts_in,phase_name):
     def range_filter(st,phase_name):
         if phase_name == 'S' or phase_name == 'sS':
-            if st[0].stats.evdp <= 50:
-                for tr in st:
-                    if tr.stats.gcarc >= 102.75 or tr.stats.gcarc < 20:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 50 and st[0].stats.evdp < 150:
-                for tr in st:
-                    if tr.stats.gcarc >= 102.5 or tr.stats.gcarc < 20.:
-                        st.remove(tr)
-            elif st[0].stats.evdp >= 150 and st[0].stats.evdp <= 200:
-                for tr in st:
-                    if tr.stats.gcarc >= 102.25 or tr.stats.gcarc < 20.:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 200 and st[0].stats.evdp < 300:
-                for tr in st:
-                    if tr.stats.gcarc >= 102 or tr.stats.gcarc < 20.:
-                        st.remove(tr)
-            elif st[0].stats.evdp >= 300 and st[0].stats.evdp <= 350:
-                for tr in st:
-                    if tr.stats.gcarc >= 101.75 or tr.stats.gcarc < 20.:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 350 and st[0].stats.evdp <= 400:
-                for tr in st:
-                    if tr.stats.gcarc >= 101.5 or tr.stats.gcarc < 20.:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 400 and st[0].stats.evdp <= 450:
-                for tr in st:
-                    if tr.stats.gcarc >= 101.25 or tr.stats.gcarc < 20.:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 450 and st[0].stats.evdp <= 500:
-                for tr in st:
-                    if tr.stats.gcarc >= 101.00 or tr.stats.gcarc < 20.:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 500 and st[0].stats.evdp <= 550:
-                for tr in st:
-                    if tr.stats.gcarc >= 100.75 or tr.stats.gcarc < 20.:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 550 and st[0].stats.evdp <= 600:
-                for tr in st:
-                    if tr.stats.gcarc >= 100.5 or tr.stats.gcarc < 20.:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 600 and st[0].stats.evdp <= 650:
-                for tr in st:
-                    if tr.stats.gcarc >= 100.25 or tr.stats.gcarc < 20.:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 650 and st[0].stats.evdp < 700:
-                for tr in st:
-                    if tr.stats.gcarc >= 100.0 or tr.stats.gcarc < 20.:
-                        st.remove(tr)
+            for tr in st:
+                if tr.stats.gcarc > 100 or tr.stats.gcarc < 20:
+                    st.remove(tr)
 
         if phase_name == 'Sdiff' or phase_name == 'sSdiff':
-            if st[0].stats.evdp <= 50:
-                for tr in st:
-                    if tr.stats.gcarc <= 102.75 or tr.stats.gcarc > 109:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 50 and st[0].stats.evdp < 150:
-                for tr in st:
-                    if tr.stats.gcarc <= 102.5 or tr.stats.gcarc >109.:
-                        st.remove(tr)
-            elif st[0].stats.evdp >= 150 and st[0].stats.evdp <= 200:
-                for tr in st:
-                    if tr.stats.gcarc <= 102.25 or tr.stats.gcarc > 109:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 200 and st[0].stats.evdp < 300:
-                for tr in st:
-                    if tr.stats.gcarc <= 102 or tr.stats.gcarc > 109:
-                        st.remove(tr)
-            elif st[0].stats.evdp >= 300 and st[0].stats.evdp <= 350:
-                for tr in st:
-                    if tr.stats.gcarc <= 101.75 or tr.stats.gcarc > 109:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 350 and st[0].stats.evdp <= 400:
-                for tr in st:
-                    if tr.stats.gcarc <= 101.5 or tr.stats.gcarc > 109:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 400 and st[0].stats.evdp <= 450:
-                for tr in st:
-                    if tr.stats.gcarc <= 101.25 or tr.stats.gcarc > 109:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 450 and st[0].stats.evdp <= 500:
-                for tr in st:
-                    if tr.stats.gcarc <= 101.00 or tr.stats.gcarc > 109:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 500 and st[0].stats.evdp <= 550:
-                for tr in st:
-                    if tr.stats.gcarc <= 100.75 or tr.stats.gcarc > 109:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 550 and st[0].stats.evdp <= 600:
-                for tr in st:
-                    if tr.stats.gcarc <= 100.5 or tr.stats.gcarc > 109:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 600 and st[0].stats.evdp <= 650:
-                for tr in st:
-                    if tr.stats.gcarc <= 100.25 or tr.stats.gcarc > 109:
-                        st.remove(tr)
-            elif st[0].stats.evdp > 650 and st[0].stats.evdp < 700:
-                for tr in st:
-                    if tr.stats.gcarc <= 100.0 or tr.stats.gcarc > 109:
-                        st.remove(tr)
-
+            for tr in st:
+                if tr.stats.gcarc < 95 or tr.stats.gcarc > 155:
+                    st.remove(tr)
 
         if phase_name == 'SS' or phase_name == 'sSS':
             for tr in st:
@@ -900,4 +809,104 @@ def phase_range(std_in,sts_in,phase_name):
 
 
 main()
+
+        #if phase_name == 'S' or phase_name == 'sS':
+        #    if st[0].stats.evdp <= 50:
+        #        for tr in st:
+        #            if tr.stats.gcarc > 99 or tr.stats.gcarc < 20:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 50 and st[0].stats.evdp < 150:
+        #        for tr in st:
+        #            if tr.stats.gcarc > 98 or tr.stats.gcarc < 20.:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp >= 150 and st[0].stats.evdp <= 200:
+        #        for tr in st:
+        #            if tr.stats.gcarc >= 102.25 or tr.stats.gcarc < 20.:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 200 and st[0].stats.evdp < 300:
+        #        for tr in st:
+        #            if tr.stats.gcarc >= 102 or tr.stats.gcarc < 20.:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp >= 300 and st[0].stats.evdp <= 350:
+        #        for tr in st:
+        #            if tr.stats.gcarc >= 101.75 or tr.stats.gcarc < 20.:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 350 and st[0].stats.evdp <= 400:
+        #        for tr in st:
+        #            if tr.stats.gcarc >= 101.5 or tr.stats.gcarc < 20.:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 400 and st[0].stats.evdp <= 450:
+        #        for tr in st:
+        #            if tr.stats.gcarc >= 101.25 or tr.stats.gcarc < 20.:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 450 and st[0].stats.evdp <= 500:
+        #        for tr in st:
+        #            if tr.stats.gcarc >= 101.00 or tr.stats.gcarc < 20.:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 500 and st[0].stats.evdp <= 550:
+        #        for tr in st:
+        #            if tr.stats.gcarc >= 100.75 or tr.stats.gcarc < 20.:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 550 and st[0].stats.evdp <= 600:
+        #        for tr in st:
+        #            if tr.stats.gcarc >= 100.5 or tr.stats.gcarc < 20.:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 600 and st[0].stats.evdp <= 650:
+        #        for tr in st:
+        #            if tr.stats.gcarc >= 100.25 or tr.stats.gcarc < 20.:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 650 and st[0].stats.evdp < 700:
+        #        for tr in st:
+        #            if tr.stats.gcarc >= 100.0 or tr.stats.gcarc < 20.:
+        #                st.remove(tr)
+
+        #if phase_name == 'Sdiff' or phase_name == 'sSdiff':
+        #    if st[0].stats.evdp <= 50:
+        #        for tr in st:
+        #            if tr.stats.gcarc <= 102.75 or tr.stats.gcarc > 109:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 50 and st[0].stats.evdp < 150:
+        #        for tr in st:
+        #            if tr.stats.gcarc <= 102.5 or tr.stats.gcarc >109.:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp >= 150 and st[0].stats.evdp <= 200:
+        #        for tr in st:
+        #            if tr.stats.gcarc <= 102.25 or tr.stats.gcarc > 109:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 200 and st[0].stats.evdp < 300:
+        #        for tr in st:
+        #            if tr.stats.gcarc <= 102 or tr.stats.gcarc > 109:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp >= 300 and st[0].stats.evdp <= 350:
+        #        for tr in st:
+        #            if tr.stats.gcarc <= 101.75 or tr.stats.gcarc > 109:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 350 and st[0].stats.evdp <= 400:
+        #        for tr in st:
+        #            if tr.stats.gcarc <= 101.5 or tr.stats.gcarc > 109:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 400 and st[0].stats.evdp <= 450:
+        #        for tr in st:
+        #            if tr.stats.gcarc <= 101.25 or tr.stats.gcarc > 109:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 450 and st[0].stats.evdp <= 500:
+        #        for tr in st:
+        #            if tr.stats.gcarc <= 101.00 or tr.stats.gcarc > 109:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 500 and st[0].stats.evdp <= 550:
+        #        for tr in st:
+        #            if tr.stats.gcarc <= 100.75 or tr.stats.gcarc > 109:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 550 and st[0].stats.evdp <= 600:
+        #        for tr in st:
+        #            if tr.stats.gcarc <= 100.5 or tr.stats.gcarc > 109:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 600 and st[0].stats.evdp <= 650:
+        #        for tr in st:
+        #            if tr.stats.gcarc <= 100.25 or tr.stats.gcarc > 109:
+        #                st.remove(tr)
+        #    elif st[0].stats.evdp > 650 and st[0].stats.evdp < 700:
+        #        for tr in st:
+        #            if tr.stats.gcarc <= 100.0 or tr.stats.gcarc > 109:
+        #                st.remove(tr)
 
