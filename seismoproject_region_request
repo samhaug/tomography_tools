@@ -8,12 +8,13 @@
 date=$1
 min_date=$date-01-01
 max_date=$date-12-30
+
 if [ $2 == 'india' ]; then
     echo 'Indian ocean '$date
     event_rect=58/87/-37/0
 elif [ $2 == 'south_atlantic' ]; then
     echo 'South-atlantic ocean '$date
-    event_rect=-21/+99/-58/-37
+    event_rect=1/99/-58/-37
 elif [ $2 == 'south_pacific' ]; then
     echo 'South-pacific ocean '$date
     event_rect=-179/-84/-70/-35

@@ -106,9 +106,7 @@ def main():
         args.phase = phase_list[jdx]
         args.fmin = fmin_list[jdx]
         args.fmax = fmax_list[jdx]
-        #fname = write_header(args.phase,args)
         branch_list = phase_info(args.phase)
-        #write_branch(fname,branch_list)
         freq_resp = write_f_resp(args.fmin,args.fmax)
         #write_freqency to h5file
         h5f[group_name[jdx]].create_dataset('freq_resp',data=freq_resp)
@@ -266,16 +264,6 @@ def even_traces(st,sts):
     sts.sort(['name'])
     st.sort(['name'])
     return st,sts
-
-def display_id(args):
-    f = open(args.fname,'r').readlines()
-    st_id = []
-    for ii in f:
-        if len(ii.strip().split()) < 5:
-            continue
-        else:
-            st_id.append(int(ii.strip().split()[0]))
-    return st_id
 
 def welcome_message(args,st):
     print('#######################################')
@@ -628,68 +616,6 @@ def read_streams(data_pickle,synth_pickle):
     std.interpolate(10)
     return std,sts
 
-def write_traveltime(fname,tr,tsig,tobs,corcoeft,nbt,xcl,tincore):
-    idate=str(tr.stats.starttime.year)[-2::]+'%03d'%tr.stats.starttime.day
-    iotime='%02d%02d%02d'%(tr.stats.starttime.hour,
-                           tr.stats.starttime.minute,
-                           tr.stats.starttime.second)
-    ievt='1'
-    kluster='0'
-    stationcode=tr.stats.station
-    netw=tr.stats.network
-    comp=tr.stats.channel
-    slat=round(tr.stats.evla,2)
-    slon=round(tr.stats.evlo,2)
-    sdep=round(tr.stats.evdp,2)
-    rlat=round(tr.stats.stla,2)
-    rlon=round(tr.stats.stlo,2)
-    relev=0.0
-    nobst=1
-    nobsa=0
-    #number of polar crossings
-    kpole=0
-    line_2 = '1 0 00\n'
-    line_3 = '1\n'
-    line_5 = '0\n'
-    with open(fname,'a') as f:
-        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
-                str(idate),
-                str(iotime),
-                str(ievt),
-                str(kluster),
-                stationcode,
-                netw,
-                comp,
-                str(slat),
-                str(slon),
-                str(sdep),
-                str(rlat),
-                str(rlon),
-                str(relev),
-                str(nobst),
-                str(nobsa),
-                str(kpole),
-                ))
-        f.write(line_2)
-        f.write(line_3)
-        f.write('{} {} {} {} {} {}\n'.format(
-                 str(tobs),
-                 str(tsig),
-                 str(corcoeft[1]),
-                 str(int(nbt)),
-                 str(2.*xcl),
-                 str(int(tincore))))
-        f.write(line_5)
-
-def write_header(phase_name,args):
-    fname = '{}_{}_{}.dat'.format(getcwd().split('/')[-1],
-                                  phase_name,
-                                  round(1./args.fmax))
-    with open(fname,'w') as f:
-        f.write(fname+'\n')
-        f.write('None\n')
-    return fname
-
 def write_f_resp(fmin,fmax):
     fmin *= 2*pi
     fmax *= 2*pi
@@ -703,11 +629,6 @@ def write_f_resp(fmin,fmax):
     #    f.write('{}\n'.format(len(w)))
     #    savetxt(f,freq_resp,fmt='%1.7f')
     return freq_resp
-
-def write_branch(fname,branch_list):
-    with open(fname,'a') as f:
-        for ii in branch_list:
-            f.write(ii+'\n')
 
 def phase_info(phase_name):
     if phase_name == 'sSdiff':
@@ -766,7 +687,7 @@ def phase_range(std_in,sts_in,phase_name):
                 for tr in st:
                     if tr.stats.gcarc >= 102.5 or tr.stats.gcarc < 20.:
                         st.remove(tr)
-            elif st[0].stats.evdp >= 150 and st[0].stats.evdp =< 200:
+            elif st[0].stats.evdp >= 150 and st[0].stats.evdp <= 200:
                 for tr in st:
                     if tr.stats.gcarc >= 102.25 or tr.stats.gcarc < 20.:
                         st.remove(tr)
@@ -774,7 +695,7 @@ def phase_range(std_in,sts_in,phase_name):
                 for tr in st:
                     if tr.stats.gcarc >= 102 or tr.stats.gcarc < 20.:
                         st.remove(tr)
-            elif st[0].stats.evdp >= 300 and st[0].stats.evdp =< 350:
+            elif st[0].stats.evdp >= 300 and st[0].stats.evdp <= 350:
                 for tr in st:
                     if tr.stats.gcarc >= 101.75 or tr.stats.gcarc < 20.:
                         st.remove(tr)
@@ -816,7 +737,7 @@ def phase_range(std_in,sts_in,phase_name):
                 for tr in st:
                     if tr.stats.gcarc <= 102.5 or tr.stats.gcarc >109.:
                         st.remove(tr)
-            elif st[0].stats.evdp >= 150 and st[0].stats.evdp =< 200:
+            elif st[0].stats.evdp >= 150 and st[0].stats.evdp <= 200:
                 for tr in st:
                     if tr.stats.gcarc <= 102.25 or tr.stats.gcarc > 109:
                         st.remove(tr)
@@ -824,7 +745,7 @@ def phase_range(std_in,sts_in,phase_name):
                 for tr in st:
                     if tr.stats.gcarc <= 102 or tr.stats.gcarc > 109:
                         st.remove(tr)
-            elif st[0].stats.evdp >= 300 and st[0].stats.evdp =< 350:
+            elif st[0].stats.evdp >= 300 and st[0].stats.evdp <= 350:
                 for tr in st:
                     if tr.stats.gcarc <= 101.75 or tr.stats.gcarc > 109:
                         st.remove(tr)
@@ -976,79 +897,7 @@ def phase_range(std_in,sts_in,phase_name):
 
     return std,sts
 
-def write_amp_header(phase_name,fmin,fmax):
-    fname = '{}_{}_{}.dat'.format(getcwd().split('/')[-1],
-                                  phase_name,
-                                  round(1./fmax))
-    with open(fname,'w') as f:
-        f.write(fname+'\n')
-        f.write('fmin,fmax''\n')
-        f.write('{} {}\n'.format(fmin,fmax))
-        f.write('idate,iotime,stat,netw,comp,slat,slon,sdep,rlat,rlon,relev,tobs,delt,corcoeft,m1,m2,s_amp,d_amp,SNR1,SNR2,amp_rat\n')
-    return fname
 
-def write_amplitude(fname,ii,tr,tobs,corcoeft,m1,m2,update_m1,update_m2,s_amp,d_amp,del_t,SNR,amp_rat,left_rat,right_rat,lsq):
-    idate=str(tr.stats.starttime.year)[-2::]+'%03d'%tr.stats.starttime.day
-    iotime='%02d%02d%02d'%(tr.stats.starttime.hour,
-                           tr.stats.starttime.minute,
-                           tr.stats.starttime.second)
-    stationcode=tr.stats.station
-    netw=tr.stats.network
-    comp=tr.stats.channel
-    slat=round(tr.stats.evla,2)
-    slon=round(tr.stats.evlo,2)
-    sdep=round(tr.stats.evdp,2)
-    rlat=round(tr.stats.stla,2)
-    rlon=round(tr.stats.stlo,2)
-    gcarc = round(tr.stats.gcarc,2)
-    relev=0.0
-    #number of polar crossings
-    line_2 = '1 0 00\n'
-    line_3 = '1\n'
-    line_5 = '0\n'
-    with open(fname,'a') as f:
-        f.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(
-                str(ii),
-                str(idate),
-                str(iotime),
-                '%5s'%stationcode,
-                '%3s'%netw,
-                '%3s'%comp,
-                '%1.2f'%slat,
-                '%1.2f'%slon,
-                '%1.1f'%sdep,
-                '%1.1f'%rlat,
-                '%1.1f'%rlon,
-                '%1.2f'%relev,
-                '%1.1f'%tobs,
-                '%1.1f'%del_t,
-                '%1.3f'%corcoeft[0],
-                '%1.3f'%corcoeft[1],
-                '%1.3f'%m1,
-                '%1.3f'%m2,
-                '%1.3f'%update_m1,
-                '%1.3f'%update_m2,
-                '%1.2e'%s_amp,
-                '%1.2e'%d_amp,
-                '%1.2f'%SNR[0],
-                '%1.2f'%SNR[1],
-                '%1.2f'%amp_rat,
-                '%1.2f'%left_rat,
-                '%1.2f'%right_rat,
-                '%1.2f'%lsq,
-                '%1.2f'%gcarc,
-                ))
-
-def monochrome(tt,yy):
-    '''
-    Find likliest frequency
-    '''
-    #tt = np.linspace(0,tr.stats.endtime-tr.stats.starttime,num=tr.stats.npts)
-    #yy = tr.data
-    ff = fftfreq(len(tt),(tt[1]-tt[0]))
-    Fyy = abs(fft(yy))
-    freq = abs(ff[argmax(Fyy[1:])+1])
-    return freq
 
 main()
 
