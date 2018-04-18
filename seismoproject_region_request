@@ -18,9 +18,9 @@ elif [ $2 == 'south_atlantic' ]; then
 elif [ $2 == 'south_pacific' ]; then
     echo 'South-pacific ocean '$date
     event_rect=-179/-84/-70/-35
-elif [ $2 == 'mid_atlantic' ]; then
-    echo 'Mid-atlantic ocean '$date
-    event_rect=-60/0/-38/+5
+elif [ $2 == 'north_atlantic' ]; then
+    echo 'North-atlantic ocean '$date
+    event_rect=-60/0/0/90
 fi
 
 min_depth=0
