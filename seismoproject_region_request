@@ -20,7 +20,16 @@ elif [ $2 == 'south_pacific' ]; then
     event_rect=-179/-84/-70/-35
 elif [ $2 == 'north_atlantic' ]; then
     echo 'North-atlantic ocean '$date
-    event_rect=-60/0/0/90
+    event_rect=-60/-0.1/0.1/90
+elif [ $2 == 'south_africa' ]; then
+    echo 'South Africa '$date
+    event_rect=20/40/-25/-0.1
+elif [ $2 == 'north_africa' ]; then
+    echo 'North Africa '$date
+    event_rect=20/40/0.1/10
+elif [ $2 == 'hawaii' ]; then
+    echo 'hawaii '$date
+    event_rect=-160/-150/17/23
 fi
 
 min_depth=0
