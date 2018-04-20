@@ -26,7 +26,7 @@ elif [ $2 == 'south_africa' ]; then
     event_rect=20/40/-25/-0.1
 elif [ $2 == 'north_africa' ]; then
     echo 'North Africa '$date
-    event_rect=20/40/0.1/10
+    event_rect=20/80/0.1/10
 elif [ $2 == 'hawaii' ]; then
     echo 'hawaii '$date
     event_rect=-160/-150/17/23
