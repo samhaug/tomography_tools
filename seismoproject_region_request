@@ -14,7 +14,7 @@ if [ $2 == 'india' ]; then
     event_rect=58/87/-37/0
 elif [ $2 == 'south_atlantic' ]; then
     echo 'South-atlantic ocean '$date
-    event_rect=1/150/-58/-37
+    event_rect=-30/-0.1/-70/-0.1
 elif [ $2 == 'south_pacific' ]; then
     echo 'South-pacific ocean '$date
     event_rect=-179/-84/-70/-35
