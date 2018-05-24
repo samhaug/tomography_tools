@@ -1,15 +1,15 @@
 #!/bin/bash
 
 echo 'rotate_ne'
-rotate_ne
+/dept/geology/geo/home/tomo_project/UM_tomo_tools/rotate_ne
 echo 'data_metadata'
-data_metadata
+/dept/geology/geo/home/tomo_project/UM_tomo_tools/data_metadata
 echo 'synth_metadata'
-synth_metadata
+/dept/geology/geo/home/tomo_project/UM_tomo_tools/synth_metadata
 echo 'rotate_data'
-rotate_data
+/dept/geology/geo/home/tomo_project/UM_tomo_tools/rotate_data
 echo 'rotate_synth'
-rotate_synth
+/dept/geology/geo/home/tomo_project/UM_tomo_tools/rotate_synth
 echo 'remove_excess'
-remove_excess
+/dept/geology/geo/home/tomo_project/UM_tomo_tools/remove_excess
 touch 'DONE'
