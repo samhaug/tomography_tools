@@ -1,0 +1,140 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : synth_metadata
+Purpose : save synthetic metadata
+Creation Date : 14-08-2017
+Last Modified : Mon 14 Aug 2017 01:57:02 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+import obspy
+from numpy import abs,where
+from scipy import signal
+from glob import glob
+import os
+
+def main():
+    std_Z = obspy.read('st_Z.h5')
+    tri = find_stf(std_Z[0])
+    sts_Z = obspy.core.Stream()
+
+    print('st_Z')
+    for tr in std_Z:
+        try:
+            st = obspy.read('syngine_prem_i_2s/{}.{}.{}.{}'.format(
+                            tr.stats.network,
+                            tr.stats.station,
+                            tr.stats.location,
+                            tr.stats.channel))
+            st[0].stats.baz = tr.stats.baz
+            st[0].stats.az = tr.stats.az
+            st[0].stats.gcarc = tr.stats.gcarc
+            st[0].stats.o = 0
+            st[0].stats.evla = tr.stats.evla
+            st[0].stats.evlo = tr.stats.evlo
+            st[0].stats.stla = tr.stats.stla
+            st[0].stats.stlo = tr.stats.stlo
+            st[0].stats.evdp = tr.stats.evdp
+            st[0].stats.stel = tr.stats.stel
+            st[0].stats.mag = tr.stats.mag
+            conv = signal.convolve(st[0].data,signal.triang(
+                                   st[0].stats.sampling_rate*tri),
+                                   mode='same')
+            conv *= st[0].data.max()/conv.max()
+            st[0].data = conv
+            sts_Z.append(st[0])
+        except IOError:
+            continue
+    sts_Z.write('sts_Z.h5',format='H5')
+
+    std_E = obspy.read('st_E.h5')
+    sts_E = obspy.core.Stream()
+
+    print('st_E')
+    for tr in std_E:
+        try:
+            st = obspy.read('syngine_prem_i_2s/{}.{}.{}.{}'.format(
+                                                 tr.stats.network,
+                                                 tr.stats.station,
+                                                 tr.stats.location,
+                                                 tr.stats.channel))
+            st[0].stats.baz = tr.stats.baz
+            st[0].stats.az = tr.stats.az
+            st[0].stats.gcarc = tr.stats.gcarc
+            st[0].stats.o = 0
+            st[0].stats.evla = tr.stats.evla
+            st[0].stats.evlo = tr.stats.evlo
+            st[0].stats.stla = tr.stats.stla
+            st[0].stats.stlo = tr.stats.stlo
+            st[0].stats.evdp = tr.stats.evdp
+            st[0].stats.stel = tr.stats.stel
+            st[0].stats.mag = tr.stats.mag
+            conv = signal.convolve(st[0].data,signal.triang(
+                                   st[0].stats.sampling_rate*tri),
+                                   mode='same')
+            conv *= st[0].data.max()/conv.max()
+            st[0].data = conv
+            sts_E.append(st[0])
+        except IOError:
+            continue
+    sts_E.write('sts_E.h5',format='H5')
+
+    std_N = obspy.read('st_N.h5')
+    sts_N = obspy.core.Stream()
+
+    print('st_N')
+    for tr in std_N:
+        try:
+            st = obspy.read('syngine_prem_i_2s/{}.{}.{}.{}'.format(
+                                                 tr.stats.network,
+                                                 tr.stats.station,
+                                                 tr.stats.location,
+                                                 tr.stats.channel))
+            st[0].stats.baz = tr.stats.baz
+            st[0].stats.az = tr.stats.az
+            st[0].stats.gcarc = tr.stats.gcarc
+            st[0].stats.o = 0
+            st[0].stats.evla = tr.stats.evla
+            st[0].stats.evlo = tr.stats.evlo
+            st[0].stats.stla = tr.stats.stla
+            st[0].stats.stlo = tr.stats.stlo
+            st[0].stats.evdp = tr.stats.evdp
+            st[0].stats.stel = tr.stats.stel
+            st[0].stats.mag = tr.stats.mag
+            conv = signal.convolve(st[0].data,signal.triang(
+                                   st[0].stats.sampling_rate*tri),
+                                   mode='same')
+            conv *= st[0].data.max()/conv.max()
+            st[0].data = conv
+            sts_N.append(st[0])
+        except IOError:
+            continue
+    sts_N.write('sts_N.h5',format='H5')
+
+def find_stf(tr):
+    f = open('../EVENTS-INFO/catalog.txt','r').readlines()
+    l = []
+    for idx,ii in enumerate(f):
+        if ii.startswith('#'):
+            l.append(idx)
+    c = [ii.strip().split(',') for ii in f[max(l)+1::]]
+    t = []
+    for idx,ii in enumerate(c):
+        try:
+            t.append(abs(tr.stats.starttime-obspy.core.UTCDateTime(ii[2])))
+        except IndexError:
+            t.append(1e30)
+
+    i = t.index(min(t))
+    stf = float(c[i][17])
+    return stf
+
+
+
+
+main()
