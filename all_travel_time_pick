@@ -806,8 +806,6 @@ def phase_range(std_in,sts_in,phase_name):
 
     return std,sts
 
-
-
 main()
 
         #if phase_name == 'S' or phase_name == 'sS':
