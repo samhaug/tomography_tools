@@ -12,6 +12,9 @@ max_date=$date-12-30
 if [ $2 == 'india' ]; then
     echo 'Indian ocean '$date
     event_rect=58/87/-37/0
+elif [ $2 == 'south_india' ]; then
+    echo 'South Indian ocean '$date
+    event_rect=0/150/-85/-37
 elif [ $2 == 'south_atlantic' ]; then
     echo 'South-atlantic ocean '$date
     event_rect=-30/-0.1/-70/-0.1

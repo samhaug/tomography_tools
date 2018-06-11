@@ -114,9 +114,9 @@ def brute_remove(st,sts):
 def remove_redundant(st):
     a = []
     for tr in st:
-        tr.name = tr.stats.network+tr.stats.station+tr.stats.location
-        if name not in a:
-            a.append(name)
+        tr.stats.name = tr.stats.network+tr.stats.station+tr.stats.location
+        if tr.stats.name not in a:
+            a.append(tr.stats.name)
         else:
             st.remove(tr)
     return st
