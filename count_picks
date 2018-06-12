@@ -1,0 +1,153 @@
+#!/home/samhaug/anaconda2/bin/python
+
+'''
+==============================================================================
+
+File Name : count_picks
+Purpose : count_all picks
+Creation Date : 12-09-2017
+Last Modified : Mon 18 Sep 2017 04:43:24 PM EDT
+Created By : Samuel M. Haugland
+
+==============================================================================
+'''
+
+import numpy as np
+from obspy.geodetics.base import gps2dist_azimuth
+import geopy
+from geopy.distance import VincentyDistance
+from matplotlib import pyplot as plt
+from mpl_toolkits.basemap import Basemap
+import argparse
+import h5py
+from glob import glob
+
+
+def main():
+    parser = argparse.ArgumentParser(
+                       description='map S times')
+    parser.add_argument('-f','--h5_files',metavar='*picks.h5',type=str,
+                        help='list of h5_files')
+    parser.add_argument('-l','--max_dist',metavar='float',type=float,
+                        default=180,help='maximum_distance (deg)')
+    parser.add_argument('-s','--min_dist',metavar='float',type=float,
+                        default=0,help='minimum distance (deg)')
+    parser.add_argument('--min_c1',metavar='float',type=float,
+                        default=0.5,help='minimum corcoeft_1 allowed')
+    parser.add_argument('--min_c2',metavar='float',type=float,
+                        default=0.75,help='minimum corcoeft_2 allowed')
+    parser.add_argument('--min_lsq1',metavar='float',type=float,
+                        default=0.5,help='minimum lsq_1 allowed')
+    parser.add_argument('--min_lsq2',metavar='float',type=float,
+                        default=0.75,help='minimum lsq_2 allowed')
+    parser.add_argument('--max_dt',metavar='float',type=float,
+                        default=30.0,help='maximum delta_T')
+    parser.add_argument('--dt_shift',metavar='bool',type=bool,
+                        default=True,help='mandate updated time shift be less\
+                                           than original')
+
+    args = parser.parse_args()
+    fig,ax = plt.subplots()
+    dat_list = glob(args.h5_files)
+    s5_total = 0
+    s10_total = 0
+    s20_total = 0
+    s40_total = 0
+    sdiff20_total = 0
+    SS20_total = 0
+    SSS30_total = 0
+    ScS10_total = 0
+    ScSScS15_total = 0
+    ScSScSScS15_total = 0
+    SKS15_total = 0
+    SKKS15_total = 0
+    #P10
+    #P20
+    #P40
+    #Pdiff20
+    for ii in dat_list:
+        print ii
+        try:
+            h5f = h5py.File(ii,'r',driver='core')
+        except IOError:
+            continue
+        try:
+            s5_total += h5f['S5']['pick_info'].shape[0]
+        except KeyError:
+            s5_total += 0
+        try:
+            s10_total += h5f['S10']['pick_info'].shape[0]
+        except KeyError:
+            s10_total += 0
+        try:
+            s20_total += h5f['S20']['pick_info'].shape[0]
+        except KeyError:
+            s20_total += 0
+        try:
+            s40_total += h5f['S40']['pick_info'].shape[0]
+        except KeyError:
+            s40_total += 0
+        try:
+            sdiff20_total += h5f['Sdiff20']['pick_info'].shape[0]
+        except KeyError:
+            sdiff20_total += 0
+        try:
+            SS20_total += h5f['SS20']['pick_info'].shape[0]
+        except KeyError:
+            SS20_total += 0
+        try:
+            SSS30_total += h5f['SSS30']['pick_info'].shape[0]
+        except KeyError:
+            SSS30_total += 0
+        try:
+            ScS10_total += h5f['ScS10']['pick_info'].shape[0]
+        except KeyError:
+            ScS10_total += 0
+        try:
+            ScSScS15_total += h5f['ScSScS15']['pick_info'].shape[0]
+        except KeyError:
+            ScSScS15_total += 0
+        try:
+            ScSScSScS15_total += h5f['ScSScSScS15']['pick_info'].shape[0]
+        except KeyError:
+            ScSScSScS15_total += 0
+        try:
+            SKS15_total += h5f['SKS15']['pick_info'].shape[0]
+        except KeyError:
+            SKS15_total += 0
+        try:
+            SKKS15_total += h5f['SKKS15']['pick_info'].shape[0]
+        except KeyError:
+            SKKS15_total += 0
+            continue
+
+    print 'S5 total: ', s5_total
+    print 'S10 total: ', s10_total
+    print 'S20 total: ', s20_total
+    print 'S40 total: ', s40_total
+    print 'Sdiff20 total: ', sdiff20_total
+    print 'SS20_total: ' , SS20_total
+    print 'SSS30_total: ', SSS30_total
+    print 'ScS10_total: ', ScS10_total
+    print 'ScSScS15_total: ', ScSScS15_total
+    print 'ScSScSScS15_total: ', ScSScSScS15_total
+    print 'SKS15_total: ', SKS15_total
+    print 'SKKS15_total: ', SKKS15_total
+    print ' '
+
+
+    S_grand_total = s5_total +\
+    s10_total +\
+    s20_total +\
+    s40_total +\
+    sdiff20_total +\
+    SS20_total +\
+    SSS30_total +\
+    ScS10_total +\
+    ScSScS15_total +\
+    ScSScSScS15_total +\
+    SKS15_total +\
+    SKKS15_total
+    print 'S GRAND TOTAL: ', S_grand_total
+main()
+
