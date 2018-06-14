@@ -17,4 +17,8 @@ echo "rm st_E.h5"   >>"$datapath"_submit.pbs
 echo "rm sts_E.h5"  >>"$datapath"_submit.pbs
 echo "rm st_N.h5"   >>"$datapath"_submit.pbs
 echo "rm sts_N.h5"  >>"$datapath"_submit.pbs
+echo "rm *.err"  >>"$datapath"_submit.pbs
+echo "rm *.out"  >>"$datapath"_submit.pbs
+echo "rm *.e"  >>"$datapath"_submit.pbs
+echo "rm *.o"  >>"$datapath"_submit.pbs
 qsub "$datapath"_submit.pbs
