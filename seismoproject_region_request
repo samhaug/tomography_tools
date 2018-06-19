@@ -33,6 +33,9 @@ elif [ $2 == 'north_africa' ]; then
 elif [ $2 == 'hawaii' ]; then
     echo 'hawaii '$date
     event_rect=-160/-150/17/23
+elif [ $2 == 'nazca' ]; then
+    echo 'nazca '$date
+    event_rect=-140/-100/-30/0
 fi
 
 min_depth=0
