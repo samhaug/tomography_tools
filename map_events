@@ -15,6 +15,7 @@ Created By : Samuel M. Haugland
 import numpy as np
 from matplotlib import pyplot as plt
 from sys import argv
+from glob import glob
 from mpl_toolkits.basemap import Basemap
 
 
@@ -22,13 +23,18 @@ def main():
     m = Basemap(projection='cyl')
     ax = plt.gca()
     m.drawcoastlines(linewidth=0.5)
-    a = open('EVENTS-INFO/catalog_table.txt').readlines()[6:-1]
-    for ii in a:
-        lat,lon = float(ii.strip().split()[1]),float(ii.strip().split()[2])
-        xpt, ypt = m(lon,lat)
-        m.scatter(xpt,ypt,s=30,c='r',marker='o',lw=1)
-        ax.annotate(str(ii.strip().split()[7]),(xpt,ypt),xytext=(5,5),
-                    textcoords='offset points')
+    dirlist = glob(argv[1])
+    for jj in dirlist:
+        try:
+            a = open(jj+'/EVENTS-INFO/catalog_table.txt').readlines()[6:-1]
+            for ii in a:
+                lat,lon = float(ii.strip().split()[1]),float(ii.strip().split()[2])
+                xpt, ypt = m(lon,lat)
+                m.scatter(xpt,ypt,s=30,c='r',marker='o',lw=1)
+                ax.annotate(str(ii.strip().split()[7]),(xpt,ypt),xytext=(5,5),
+                            textcoords='offset points')
+        except IOError:
+            continue
 
     plt.tight_layout()
     plt.show()
