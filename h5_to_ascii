@@ -38,7 +38,7 @@ def main():
     evlo = float(h5['S40']['pick_info'][:][0,3])
     evdp = float(h5['S40']['pick_info'][:][0,8])
     for keys in h5:
-        with open(prefix+'_'+keys) as f:
+        with open(prefix+'_'+keys,'w') as f:
             try:
                 phase = filter(None,re.split(r'(\d+)',keys))
                 for idx,ii in enumerate(h5[keys]['pick_info'][:]):
