@@ -32,32 +32,26 @@ def main():
     l = args.lsq
     h5 = h5py.File(args.file,'r')
     out = args.file.split('.')[0]+'.dat'
+    prefix = args.file.split('.')[0]
 
-    with open(out,'w') as f:
-        f.write('evla    evlo    evdp\n')
-        evla = float(h5['S40']['pick_info'][:][0,2])
-        evlo = float(h5['S40']['pick_info'][:][0,3])
-        evdp = float(h5['S40']['pick_info'][:][0,8])
-        f.write('{:3.3f} {:3.3f} {:3.3f}\n'.format(evla,evlo,evdp))
-        f.write('stla, stlo, gcarc, t_obs, del_t\n')
-        f.write('###############################\n')
-        for keys in h5:
+    evla = float(h5['S40']['pick_info'][:][0,2])
+    evlo = float(h5['S40']['pick_info'][:][0,3])
+    evdp = float(h5['S40']['pick_info'][:][0,8])
+    for keys in h5:
+        with open(prefix+'_'+keys) as f:
             try:
                 phase = filter(None,re.split(r'(\d+)',keys))
-                f.write('NEWPHASE {} {}s\n'.format(phase[0],phase[1]))
-                for ii in h5[keys]['pick_info'][:]:
+                for idx,ii in enumerate(h5[keys]['pick_info'][:]):
                     if float(ii[18]) >= c and float(ii[24]) >= l:
-                        #evla = float(ii[2])
-                        #evlo = float(ii[3])
                         stla = float(ii[4])
                         stlo = float(ii[5])
+                        stel = 0
                         gcarc = float(ii[6])
-                        #evdp = float(ii[8])
                         tobs = float(ii[10])
                         del_t = float(ii[11])+float(ii[12])
-                        f.write('{:6.3f} {:6.3f} {:6.3f} '
-                                '{:6.3f} {:6.3f}\n'.format(
-                                stla,stlo,gcarc,tobs,del_t))
+                        f.write(str(idx)+' {:6.3f} {:6.3f} {:6.3f} '
+                                '{:6.3f} {:6.3f} {:6.3f} {:6.3f}\n'.format(
+                                evla,evlo,evdp,stla,stlo,stel,tobs))
             except KeyError:
                 continue
 
