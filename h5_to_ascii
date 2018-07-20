@@ -51,7 +51,7 @@ def main():
                         del_t = float(ii[11])+float(ii[12])
                         f.write(str(idx)+' {:6.3f} {:6.3f} {:6.3f} '
                                 '{:6.3f} {:6.3f} {:6.3f} {:6.3f}\n'.format(
-                                evla,evlo,evdp,stla,stlo,stel,tobs))
+                                evla,evlo,evdp,stla,stlo,stel,del_t))
             except KeyError:
                 continue
 

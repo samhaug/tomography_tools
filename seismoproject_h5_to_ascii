@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# Use this to process and store h5 data from event
+#
+
+#--read_catalog $read_catalog
+echo "# Sample PBS for parallel jobs'" > h5_submit.pbs
+echo "#PBS -A seismoproject_fluxod"                >>h5_submit.pbs
+echo "#PBS -q fluxod"                    >>h5_submit.pbs
+echo "#PBS -l qos=flux"                >>h5_submit.pbs
+echo "#PBS -N h5_to_ascii"               >>h5_submit.pbs
+echo "#PBS -l nodes=1:ppn=1,pmem=8gb,walltime=00:20:00">>h5_submit.pbs
+echo "#PBS -d ."                       >>h5_submit.pbs
+echo "#PBS -m n"                       >>h5_submit.pbs
+echo "#PBS -V"                         >>h5_submit.pbs
+echo "#PBS -o h5_ascii.out"           >>h5_submit.pbs
+echo "#PBS -e h5_ascii.err"           >>h5_submit.pbs
+echo "ulimit -s unlimited "     >>h5_submit.pbs
+echo "h5_to_ascii -f $1"                >> h5_submit.pbs
+qsub h5_submit.pbs
+
+
+
